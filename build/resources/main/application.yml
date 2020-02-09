@@ -1,0 +1,87 @@
+server:
+  port: 8081
+#  servlet.contextPath: /access-control
+
+spring:
+  profiles.active: h2
+  jpa:
+    show_sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.SQLServer2012Dialect
+  datasource:
+    url: jdbc:sqlserver://escort.cl8sezajlvwe.ap-northeast-2.rds.amazonaws.com:1433;database=incops5
+    username: ssncuser
+    password: qhdks!2550
+    name:
+#    hibernate:
+#      ddl-auto: none
+#      show_sql: true
+#      format_sql: true
+#      generate_statistics: true
+
+#security:
+#  basic.enabled: false
+
+logging.level:
+  org.hibernate.type: trace
+  org.hibernate.stat: debug
+  org.springframework.security: debug
+  org.springframework.web: error
+
+#database:
+#  name: incops5
+#  user: ssncuser
+#  password: qhdks!2550
+#  host: escort.cl8sezajlvwe.ap-northeast-2.rds.amazonaws.com
+#  port: 1433
+
+# Detailed Health Service
+management:
+  endpoints.health.sensitive: false
+  endpoint.health.show-details: always
+
+#---
+#spring:
+#  profiles: mssql
+#  jpa:
+#    hibernate:
+#      dialect: org.hibernate.dialect.SQLServer2012Dialect
+#      ddlAuto: create-drop
+#    properties:
+#      javax.persistence.schema-generation.scripts:
+#        action: drop-and-create
+#        # create-target: db/mssql/create.sql
+#        # drop-target: db/mssql/drop.sql
+#
+#  datasource:
+#    username: ${database.user}
+#    password: ${database.password}
+#    driverClassName: com.microsoft.sqlserver.jdbc.SQLServerDriver
+#    url: jdbc:sqlserver://${database.host}:${database.port}
+#   url: jdbc:sqlserver://${database.host}:${database.port};database=${database.name}
+#---
+#spring:
+#  profiles: h2
+#  h2.console:
+#    enabled: true
+#    path: /console
+#  jpa:
+#    show_sql: true
+#    hibernate:
+#      dialect: org.hibernate.dialect.H2Dialect
+#      ddlAuto: create-drop
+#      show_sql: true
+#      format_sql: true
+#      generate_statistics: true
+#    properties:
+#      javax.persistence.schema-generation:
+#        create-source: metadata
+#        scripts:
+#          action: drop-and-create
+#          #create-target: db/h2/create.sql
+#          #drop-target: db/h2/drop.sql
+#  datasource:
+#    platform: h2
+#    url: jdbc:h2:mem:sample;DB_CLOSE_ON_EXIT=FALSE
+#---
