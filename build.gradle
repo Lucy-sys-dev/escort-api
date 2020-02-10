@@ -130,6 +130,8 @@ dependencies {
 
     // log
     compile('io.github.microutils:kotlin-logging:1.6.10')
+    // https://mvnrepository.com/artifact/org.codehaus.janino/janino
+    compile group: 'org.codehaus.janino', name: 'janino', version: '2.7.8'
 }
 
 dependencyManagement {
