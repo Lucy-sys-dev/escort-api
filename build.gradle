@@ -127,6 +127,9 @@ dependencies {
     // shiro
 //    compile 'org.apache.shiro:shiro-spring-boot-web-starter:1.4.0'
     compile 'com.auth0:java-jwt:3.3.0'
+
+    // log
+    compile('io.github.microutils:kotlin-logging:1.6.10')
 }
 
 dependencyManagement {

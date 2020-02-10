@@ -12,6 +12,7 @@ import io.ssnc.ac.accessControl.repository.LogRepository
 import io.ssnc.ac.accessControl.repository.PCIcatBasicRepository;
 import io.ssnc.ac.accessControl.repository.PCIcatDefaultRepository;
 import io.ssnc.ac.accessControl.util.DateUtil
+import mu.KLogging
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service;
@@ -25,7 +26,7 @@ import javax.persistence.StoredProcedureQuery
 
 @Service
 class PCExceptionService {
-//    companion object : KLogging()
+    companion object : KLogging()
 
     @Autowired
     lateinit var entityManager: EntityManager
@@ -79,7 +80,7 @@ class PCExceptionService {
 
     @Transactional
     fun createLog(request: LogRequest) : String? {
-//        logger.info("Method=create, product={}", createProductRequest)
+        logger.info("Method=create, createLog={}", request)
         val logpk = LogPK(eventTime = DateUtil.nowDateTime, serial = request.serial, type = request.type, attFilename = request.att_filename)
         val log = Log(logPk = logpk)
         logRepository.save(log)
