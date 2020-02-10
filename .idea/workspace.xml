@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="e7be0900-3497-45a4-9454-a021ac87d41b" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
-    </list>
+    <list default="true" id="e7be0900-3497-45a4-9454-a021ac87d41b" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -189,12 +186,24 @@
       <workItem from="1579581614946" duration="2355000" />
       <workItem from="1579597158972" duration="15093000" />
       <workItem from="1581002099831" duration="19171000" />
-      <workItem from="1581299795035" duration="50000" />
+      <workItem from="1581299795035" duration="306000" />
     </task>
+    <task id="LOCAL-00001" summary="log 추가">
+      <created>1581300082138</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1581300082138</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="log 추가" />
+    <option name="LAST_COMMIT_MESSAGE" value="log 추가" />
   </component>
   <component name="WindowStateProjectService">
     <state x="-1010" y="197" key="#Assign_Data_Sources" timestamp="1580899338590">
@@ -205,6 +214,10 @@
       <screen x="42" y="23" width="1638" height="1027" />
     </state>
     <state x="752" y="431" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1/42.23.1638.1027@42.23.1638.1027" timestamp="1579597594041" />
+    <state x="-1524" y="119" key="CommitChangelistDialog2" timestamp="1581300081975">
+      <screen x="-1881" y="23" width="1881" height="1057" />
+    </state>
+    <state x="-1524" y="119" key="CommitChangelistDialog2/-1881.23.1881.1057/0.23.1680.1027@-1881.23.1881.1057" timestamp="1581300081975" />
     <state width="1200" height="396" key="GridCell.Tab.0.bottom" timestamp="1581299784577">
       <screen x="-1881" y="23" width="1881" height="1057" />
     </state>
@@ -306,9 +319,10 @@
       <screen x="39" y="23" width="1641" height="1027" />
     </state>
     <state x="780" y="234" key="VCS.ChangeListViewerDialog/39.23.1641.1027@39.23.1641.1027" timestamp="1581263346561" />
-    <state x="654" y="262" key="Vcs.Push.Dialog.v2" timestamp="1581262145505">
-      <screen x="38" y="23" width="1642" height="1027" />
+    <state x="-1175" y="269" key="Vcs.Push.Dialog.v2" timestamp="1581300095189">
+      <screen x="-1881" y="23" width="1881" height="1057" />
     </state>
+    <state x="-1175" y="269" key="Vcs.Push.Dialog.v2/-1881.23.1881.1057/0.23.1680.1027@-1881.23.1881.1057" timestamp="1581300095189" />
     <state x="654" y="262" key="Vcs.Push.Dialog.v2/38.23.1642.1027@38.23.1642.1027" timestamp="1581262145505" />
     <state x="576" y="349" key="com.intellij.ide.util.TipDialog" timestamp="1579597159809">
       <screen x="42" y="23" width="1638" height="1027" />
