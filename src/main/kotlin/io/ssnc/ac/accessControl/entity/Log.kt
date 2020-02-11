@@ -6,7 +6,7 @@ import java.io.Serializable
 import javax.persistence.*
 
 @Entity
-@Table(name = "PC_ICAT_LOG", schema = "incops5")
+@Table(name = "PC_ICAT_LOG", catalog = "dbo")
 data class Log (
     @EmbeddedId
     val logPk: LogPK? = null,
