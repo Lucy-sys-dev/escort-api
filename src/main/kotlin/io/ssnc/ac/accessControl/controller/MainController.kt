@@ -17,7 +17,7 @@ import javax.persistence.StoredProcedureQuery
 import javax.xml.ws.Service
 
 @RestController
-@RequestMapping("/access-control")
+@RequestMapping("/escort/access-control")
 class MainController {
 
     @Autowired

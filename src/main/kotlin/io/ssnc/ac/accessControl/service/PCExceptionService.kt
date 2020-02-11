@@ -81,7 +81,9 @@ class PCExceptionService {
     @Transactional
     fun createLog(request: LogRequest) : String? {
         logger.info("Method=create, createLog={}", request)
-        val logpk = LogPK(eventTime = DateUtil.nowDateTime, serial = request.serial, type = request.type, attFilename = request.att_filename)
+        val logpk = LogPK(
+            eventTime = DateUtil.nowDateTimeString,
+            serial = request.serial, type = request.type, attFilename = request.att_filename)
         val log = Log(logPk = logpk)
         logRepository.save(log)
 
