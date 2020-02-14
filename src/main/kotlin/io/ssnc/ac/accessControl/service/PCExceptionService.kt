@@ -2,15 +2,13 @@ package io.ssnc.ac.accessControl.service;
 
 //import io.ssnc.ac.accessControl.entity.PCExceptionResult;
 import io.ssnc.ac.accessControl.controller.NotFoundException
-import io.ssnc.ac.accessControl.entity.IcatCtrlBase
-import io.ssnc.ac.accessControl.entity.IcatCtrlDefault
-import io.ssnc.ac.accessControl.entity.Log
-import io.ssnc.ac.accessControl.entity.LogPK
+import io.ssnc.ac.accessControl.entity.*
 import io.ssnc.ac.accessControl.entity.request.LogRequest
 import io.ssnc.ac.accessControl.entity.response.IcatResult
 import io.ssnc.ac.accessControl.repository.LogRepository
 import io.ssnc.ac.accessControl.repository.PCIcatBasicRepository;
 import io.ssnc.ac.accessControl.repository.PCIcatDefaultRepository;
+import io.ssnc.ac.accessControl.repository.PcBasicRepository
 import io.ssnc.ac.accessControl.util.DateUtil
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +38,9 @@ class PCExceptionService {
     @Autowired
     lateinit var logRepository: LogRepository
 
+    @Autowired
+    lateinit var pcBasicRepository: PcBasicRepository
+
     @Transactional
     fun search(serial: String) : IcatResult? {
 
@@ -54,7 +55,7 @@ class PCExceptionService {
 
         val resultBasic = ArrayList<IcatCtrlBase>()
 
-        if (defaultResult.ctrlOnoff.equals("OFF")) {
+        if (defaultResult.ctrlOnoff.equals("ON")) {
             val query1: StoredProcedureQuery = entityManager
                 .createNamedStoredProcedureQuery("getIcatCtrlBasic")
 
@@ -66,6 +67,22 @@ class PCExceptionService {
                 resultBasic.add(basic)
             }
         }
+        val resultException = ArrayList<IcatException>()
+        val query2: StoredProcedureQuery = entityManager
+            .createNamedStoredProcedureQuery("getIcatException")
+            .setParameter("serial", serial)
+
+        val exceptions = query2.resultList
+
+        exceptions.forEach { it ->
+            val ie = it as IcatException
+            val exception = IcatException(serial = ie.serial, ctrlGubun = ie.ctrlGubun,
+                                          expType = ie.expType, expVal1 = ie.expVal1, expVal2 = ie.expVal2,
+                                          allowFromdate = ie.allowFromdate, allowTodate = ie.allowTodate)
+            resultException.add(exception)
+        }
+
+
         val result = IcatResult(serial = defaultResult.serial,
             empno = defaultResult.empno,
             hname = defaultResult.hname,
@@ -73,7 +90,8 @@ class PCExceptionService {
             pc_gubun = defaultResult.pcGubun,
             ctrl_onoff = defaultResult.ctrlOnoff,
             logging_onoff = defaultResult.loggingOnoff,
-            icat_base = resultBasic)
+            icat_base = resultBasic,
+            icat_exception = resultException)
 
         return result
     }
@@ -84,7 +102,10 @@ class PCExceptionService {
         val logpk = LogPK(
             eventTime = DateUtil.nowDateTimeString,
             serial = request.serial, type = request.type, attFilename = request.att_filename)
-        val log = Log(logPk = logpk)
+        val pcbasic = pcBasicRepository.findBySerial(request.serial)
+        val log = Log(logPk = logpk,
+            empno = pcbasic.empno, hname = pcbasic.hname, ip = pcbasic.ipAddr,
+            sdeptnm = pcbasic.sdeptnm, deptcode = pcbasic.deptcode, locatenm = pcbasic.locatenm, madecode = pcbasic.madecode)
         logRepository.save(log)
 
         return log.logPk!!.eventTime
