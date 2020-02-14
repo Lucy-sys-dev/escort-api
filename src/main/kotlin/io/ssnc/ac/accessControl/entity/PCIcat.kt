@@ -55,6 +55,27 @@ data class IcatCtrlBase (
 //            ])])
 //)
 
+@Entity
+@NamedStoredProcedureQuery(
+//    NamedStoredProcedureQuery(
+    name = "getIcatException",
+    procedureName = "dbo.SSA_USP_ICAT_EXCEPTION",
+    resultClasses = [IcatException::class],
+    parameters = [
+        StoredProcedureParameter(name = "serial", type = String::class, mode = ParameterMode.IN)
+    ]
+//    )
+)
+data class IcatException (
+    @Id
+    var serial: String,
+    var ctrlGubun: String,
+    var expType: String,
+    var expVal1: String?,
+    var expVal2: String?,
+    var allowFromdate: String,
+    var allowTodate: String
+) : Serializable
 
 
 
