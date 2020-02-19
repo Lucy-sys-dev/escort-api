@@ -26,6 +26,10 @@ spring:
 #security:
 #  basic.enabled: false
 
+downloadfile:
+  agent:
+  hash: /dfdf/
+
 logging.level:
   org.hibernate.type: trace
   org.hibernate.stat: debug

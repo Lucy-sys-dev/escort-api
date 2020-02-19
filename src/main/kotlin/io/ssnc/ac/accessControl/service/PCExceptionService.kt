@@ -5,16 +5,14 @@ import io.ssnc.ac.accessControl.controller.NotFoundException
 import io.ssnc.ac.accessControl.entity.*
 import io.ssnc.ac.accessControl.entity.request.LogRequest
 import io.ssnc.ac.accessControl.entity.response.IcatResult
-import io.ssnc.ac.accessControl.repository.LogRepository
-import io.ssnc.ac.accessControl.repository.PCIcatBasicRepository;
-import io.ssnc.ac.accessControl.repository.PCIcatDefaultRepository;
-import io.ssnc.ac.accessControl.repository.PcBasicRepository
+import io.ssnc.ac.accessControl.repository.*
 import io.ssnc.ac.accessControl.util.DateUtil
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import java.io.File
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -40,6 +38,15 @@ class PCExceptionService {
 
     @Autowired
     lateinit var pcBasicRepository: PcBasicRepository
+
+    @Autowired
+    lateinit var ssaClassstackVerinfoRepository: SsaClassstackVerinfoRepository
+
+    @Transactional
+    fun getVersion(): SsaClaastackVerinfo {
+        var results = ssaClassstackVerinfoRepository.findAll()
+        return results.last()
+    }
 
     @Transactional
     fun search(serial: String) : IcatResult? {
@@ -109,5 +116,11 @@ class PCExceptionService {
         logRepository.save(log)
 
         return log.logPk!!.eventTime
+    }
+
+    fun checkFile(file: File) {
+        if (!file.isFile) {
+            throw IllegalStateException("The path '${file.path}' is not a valid file")
+        }
     }
 }
