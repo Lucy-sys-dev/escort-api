@@ -26,6 +26,14 @@ spring:
 #security:
 #  basic.enabled: false
 
+downloadfile:
+  agent: agent.exe
+  site: site.edcfg
+  sitecsinfo: sitecsinfo.cscfg
+  plp: plp.edcfg
+  plpcsinfo: plpcsinfo.cscfg
+  path:
+
 logging.level:
   org.hibernate.type: trace
   org.hibernate.stat: debug

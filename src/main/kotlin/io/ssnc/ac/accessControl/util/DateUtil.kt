@@ -3,8 +3,10 @@ package io.ssnc.ac.accessControl.util
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
+
 
 object DateUtil {
 
@@ -26,6 +28,18 @@ object DateUtil {
     val nowDate: String
         get() {
             val sdf = SimpleDateFormat("yyyy-MM-dd")
+            return sdf.format(Date())
+        }
+
+    val nowDateToYYYYMMDD: String
+        get() {
+            val sdf = SimpleDateFormat("yyyyMMdd")
+            return sdf.format(Date())
+        }
+
+    val nowDateToYYYYMMDDHHMM: String
+        get() {
+            val sdf = SimpleDateFormat("yyyyMMddHHmm")
             return sdf.format(Date())
         }
 
@@ -85,5 +99,15 @@ object DateUtil {
             return -1
         else
             return 1
+    }
+
+    fun convertToLocalDateViaInstant(dateToConvert: Date): LocalDate? {
+        return dateToConvert.toInstant()
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+    }
+
+    fun addMonth(date: LocalDate, months: Long): LocalDate {
+        return date.plusMonths(months)
     }
 }
