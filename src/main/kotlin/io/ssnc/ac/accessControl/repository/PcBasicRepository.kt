@@ -11,8 +11,3 @@ import org.springframework.stereotype.Repository
 interface PcBasicRepository: CrudRepository<PcBasic, String> {
     fun findBySerial(serial: String): PcBasic
 }
-
-@Repository
-interface PcExceptionRepository: CrudRepository<PcException, String> {
-    fun findByPk(pk: PcExceptionPk) : PcException?
-}
