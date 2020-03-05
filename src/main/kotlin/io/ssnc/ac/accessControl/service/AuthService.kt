@@ -7,6 +7,7 @@ import io.ssnc.ac.accessControl.entity.request.LoginUserRequest
 import io.ssnc.ac.accessControl.entity.request.RegisterUserPwRequest
 import io.ssnc.ac.accessControl.exception.NotFoundException
 import io.ssnc.ac.accessControl.entity.request.RegisterUserRequest
+import io.ssnc.ac.accessControl.entity.response.LoginResponse
 import io.ssnc.ac.accessControl.exception.LoginException
 import io.ssnc.ac.accessControl.repository.InsainfoRepository
 import io.ssnc.ac.accessControl.repository.PCIcatBasicRepository
@@ -60,16 +61,19 @@ class AuthService {
     }
 
     @Throws(LoginException::class)
-    fun loginUser(request: LoginUserRequest) {
+    fun loginUser(request: LoginUserRequest) : LoginResponse {
         val pk = pcUsersPK(empno = request.id, affiliate = request.affiliate)
         val user = pcUsersRepository.findByPk(pk) ?: throw NotFoundException("empno is not found")
+
         if (user.password != request.pwd)
             throw LoginException("pwd is fail")
-        // 
 
         if (user.changePwdDt?.let { it1 -> DateUtil.convertToLocalDateViaInstant(it1)?.let { it1 -> DateUtil.addMonth(it1, 3) } }!! <= DateUtil.convertToLocalDateViaInstant(
                 user.changePwdDt!!)) {
             throw LoginException("pwd is changed")
         }
+        return LoginResponse(affiliate = user.pk!!.affiliate!!, id = user.pk.empno!!,
+            name = user.hname!!, dept_code = user.deptCode!!, emp_type = user.empType!!,
+            status = user.status!!, company_name = user.companyName!!, dept_name = user.deptName!!)
     }
 }

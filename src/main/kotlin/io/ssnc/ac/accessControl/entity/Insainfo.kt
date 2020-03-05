@@ -56,7 +56,13 @@ data class pcUsers (
     @Column(name = "HNAME") val hname: String? = null,
     @Column(name = "PASSWORD") var password: String? = null,
     @Column(name = "REG_DT") val regDt: Date? = null,
-    @Column(name = "CHANGE_PWD_DT") var changePwdDt: Date? = null
+    @Column(name = "CHANGE_PWD_DT") var changePwdDt: Date? = null,
+    @Column(name = "DEPT_CODE") var deptCode: String? = null,
+    @Column(name = "DEPT_NAME") var deptName: String? = null,
+    @Column(name = "RESNO") var resno: String? = null,
+    @Column(name = "EMP_TYPE") var empType: String? = null,
+    @Column(name = "STATUS") var status: String? = null,
+    @Column(name = "COMPANY_NAME") var companyName: String? = null
 
 ) : Serializable
 

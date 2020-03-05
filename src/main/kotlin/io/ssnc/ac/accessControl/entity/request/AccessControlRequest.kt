@@ -6,7 +6,8 @@ data class AccessControlRequest (
     val grpGubun: String = "P",
     var allowLog: String,
     val storages : List<Storage>?,
-    val programs : List<Program>?
+    val programs : List<Program>?,
+    val devices : List<Storage>?
 )
 
 data class Storage (
@@ -14,7 +15,21 @@ data class Storage (
     val allowEndDate: String,
     val devName: String,
     var allowType: String,
-    val allowDesc: String
+    val allowDesc: String,
+    val pgmLists: List<String>?
+)
+
+data class StoreRule (
+    val serial: String,
+    val grpGubun: String,
+    var allowLog: String,
+    val regEmpno: String,
+    val allowStartDate: String,
+    val allowEndDate: String,
+    val devName: String,
+    var allowType: String,
+    val allowDesc: String,
+    val pgmLists: List<String>?
 )
 
 data class Program (
