@@ -6,6 +6,7 @@ import io.ssnc.ac.accessControl.entity.*
 import io.ssnc.ac.accessControl.entity.request.AccessControlRequest
 import io.ssnc.ac.accessControl.entity.request.LogRequest
 import io.ssnc.ac.accessControl.entity.request.StoreRule
+import io.ssnc.ac.accessControl.entity.request.except
 import io.ssnc.ac.accessControl.entity.response.IcatResult
 import io.ssnc.ac.accessControl.repository.*
 import io.ssnc.ac.accessControl.util.DateUtil
@@ -57,6 +58,18 @@ class PCExceptionService {
 
     @Autowired
     lateinit var pcPgmExceptionRepository: PcPgmExceptionRepository
+
+    @Autowired
+    lateinit var pfwMediaRuleRepository: PfwMediaRuleRepository
+
+    @Autowired
+    lateinit var pfwMediaExceptionRepository: PfwMediaExceptionRepository
+
+    @Autowired
+    lateinit var pcIcatAppRepository: PcIcatAppRepository
+
+    @Autowired
+    lateinit var pcIcatClsidRepository: PcIcatClsidRepository
 
     @Transactional
     fun getVersion(): SsaClaastackVerinfo {
@@ -147,10 +160,46 @@ class PCExceptionService {
         if (!request.programs.isNullOrEmpty()){
             createProgram(request)
         }
-
         if (!request.devices.isNullOrEmpty()){
             createDevices(request)
         }
+        if (!request.files.isNullOrEmpty()){
+            createFiles(request)
+        }
+    }
+
+    fun createFiles(request: AccessControlRequest) {
+        request.files!!.forEach { file ->
+            val gubun : String = when(file.allowType) {
+                "B" -> {
+                    if (request.allowLog == "N") "0" else "1"
+                }
+                else -> {
+                    if (request.allowLog == "N") "2" else "4"
+                }
+            }
+            file.excepts!!.forEach { except ->
+                when(file.allowType) {
+                    "B" -> {
+                        when(except.subGubun) {
+                            "MSGR" -> {
+                                pcIcatAppRepository.findByPkAppexeAndRunning(except.subValue1, 1) ?.let {
+
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+
+            }
+
+        }
+    }
+
+    fun createExcept() {
+
     }
 
     fun createStorage(request: AccessControlRequest) {
@@ -374,8 +423,11 @@ class PCExceptionService {
                     pgmLists = device.pgmLists,
                     allowDesc = device.allowDesc, devName = "M")
                 createStorage1(storeRule)
-                if (!device.pgmLists.isNullOrEmpty())
+                if (!device.pgmLists.isNullOrEmpty()) {
                     createPgm(storeRule)
+                    storeRule.devName = "PDA"
+                    createMedia(storeRule)
+                }
             }
         }
     }
@@ -581,6 +633,81 @@ class PCExceptionService {
             }
         }
     }
+
+    fun createMedia(request: StoreRule) {
+        var actiongb: String? = null
+        val basic = pcBasicRepository.findBySerial(request.serial)
+
+        request.pgmLists!!.forEach { filename ->
+            val pmr_pk = PfwMediaRulePk(gubun = request.devName, procName = filename)
+            pfwMediaRuleRepository.findByPk(pmr_pk)?.let { pmr ->
+                val pme_pk = PfwMediaExceptionPk(gubun = request.devName, serial = request.serial, procName = filename)
+                pfwMediaExceptionRepository.findByPk(pme_pk)?.let { exist ->
+                    when(request.allowType) {
+                        "1" -> {
+                            pfwMediaExceptionRepository.deleteByPk(pme_pk)
+                            actiongb = "D"
+                        }
+                        else -> {
+                            exist.regDate = DateUtil.nowDateTimeString
+                            exist.allowDesc = request.allowDesc
+                            exist.allowFromdate = request.allowStartDate
+                            exist.allowTodate = request.allowEndDate
+                            exist.allowGubun = if (request.allowType == "1") 0 else 1
+                            exist.grpGubun = request.grpGubun
+                            exist.regEmpno = request.regEmpno
+                            pfwMediaExceptionRepository.save(exist)
+                            actiongb = "U"
+                        }
+                    }
+                } ?: run {
+                    if (request.allowType != "1") {
+                        val new = PfwMediaException(
+                            pk = pme_pk,
+                            regDate = DateUtil.nowDateTimeString,
+                            allowDesc = request.allowDesc,
+                            allowTodate = request.allowEndDate,
+                            allowFromdate = request.allowStartDate,
+                            allowGubun = if (request.allowType == "1") 0 else 1,
+                            regEmpno = request.regEmpno,
+                            grpGubun = request.grpGubun
+                        )
+                        pfwMediaExceptionRepository.save(new)
+                        actiongb = "I"
+                    }
+                }
+                val log_pk = IncopsPcexceptionLogPK(changeTime = DateUtil.nowDateTimeString,
+                    actiongb = actiongb, serial = request.serial, poGubun = "EXC_WALL03", devName = pme_pk.gubun)
+
+                val log = IncopsPcexceptionLog(pk = log_pk,
+                    empno = (if (request.grpGubun == "P") basic.empno else null).toString(),
+                    hname = (if (request.grpGubun == "P") basic.hname else null).toString(),
+                    poGubundtl = "DEVICE_PRGM",
+                    sdeptnm = (if (request.grpGubun == "P") basic.sdeptnm else null).toString(),
+                    deptcode = (if (request.grpGubun == "P") basic.deptcode else null).toString(),
+                    indeptnm = (if (request.grpGubun == "P") basic.indeptnm else null).toString(),
+                    locatenm = (if (request.grpGubun == "P") basic.locatenm else null).toString(),
+                    pcGubun = (if (request.grpGubun == "P") basic.pcGubun else null).toString(),
+                    grpGubun = request.grpGubun,
+                    allowedDate = DateUtil.nowDateTimeString,
+                    allowedDesc = request.allowDesc,
+                    allowFromdate = request.allowStartDate,
+                    allowTodate = request.allowEndDate,
+                    ruleNo = null,
+                    portName = null,
+                    gubun = pme_pk.gubun,
+                    allowVal = (if (request.allowType == "1") 0 else 1).toString(),
+                    logVal = request.allowLog,
+                    changer = request.regEmpno,
+                    remark1 = pme_pk.procName
+                )
+                //log 저장
+                incopsPcexceptionLogRepository.save(log)
+            }
+        }
+    }
+
+
 
 
 }
