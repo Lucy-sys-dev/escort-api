@@ -8,7 +8,10 @@ import io.ssnc.ac.accessControl.entity.request.LogRequest
 import io.ssnc.ac.accessControl.entity.request.StoreRule
 import io.ssnc.ac.accessControl.entity.request.except
 import io.ssnc.ac.accessControl.entity.response.IcatResult
+import io.ssnc.ac.accessControl.exception.ServiceException
 import io.ssnc.ac.accessControl.repository.*
+import io.ssnc.ac.accessControl.service.model.PcIcatExpListTypes
+import io.ssnc.ac.accessControl.util.DataUtil
 import io.ssnc.ac.accessControl.util.DateUtil
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,9 +74,15 @@ class PCExceptionService {
     @Autowired
     lateinit var pcIcatClsidRepository: PcIcatClsidRepository
 
+    @Autowired
+    lateinit var pcIcatExpListRepository: PcIcatExpListRepository
+
+    @Autowired
+    lateinit var pcIcatExceptionRepository: PcIcatExceptionRepository
+
     @Transactional
     fun getVersion(): SsaClaastackVerinfo {
-        var results = ssaClassstackVerinfoRepository.findAll()
+        val results = ssaClassstackVerinfoRepository.findAll()
         return results.last()
     }
 
@@ -169,38 +178,146 @@ class PCExceptionService {
     }
 
     fun createFiles(request: AccessControlRequest) {
+        val basic = pcBasicRepository.findBySerial(request.serial)
+
         request.files!!.forEach { file ->
-            val gubun : String = when(file.allowType) {
-                "B" -> {
-                    if (request.allowLog == "N") "0" else "1"
-                }
-                else -> {
-                    if (request.allowLog == "N") "2" else "4"
-                }
-            }
+            var gubun : String
+
             file.excepts!!.forEach { except ->
+                val piel_gubuns: ArrayList<PcIcatExpListTypes> = ArrayList()
+
+                piel_gubuns.add(PcIcatExpListTypes(gubun = except.subGubun, value1 = except.subValue1))
+                val ip_pk = IncopsPolicyPK(locatenm = basic.locatenm, pcGbun = basic.pcGubun, gubun = "ICAT_FILE_REP")
+                incopsPolicyRepository.findByPk(ip_pk).apply { piel_gubuns.add(PcIcatExpListTypes(gubun = "REP", value1 = value2.toString()))  }
+                ip_pk.gubun = "ICAT_SIZELIMIT"
+                incopsPolicyRepository.findByPk(ip_pk).apply {
+                    if ( value1 == "X" )
+                        piel_gubuns.add(PcIcatExpListTypes(gubun = "SIZE", value1 = ""))
+                    else
+                        piel_gubuns.add(PcIcatExpListTypes(gubun = "SIZE", value1 = value2.toString()))
+                }
+
                 when(file.allowType) {
                     "B" -> {
+                        gubun = if (request.allowLog == "N") "0" else "1"
+
                         when(except.subGubun) {
                             "MSGR" -> {
-                                pcIcatAppRepository.findByPkAppexeAndRunning(except.subValue1, 1) ?.let {
-
+                                if (pcIcatAppRepository.findByPkAppexeAndRunning(except.subValue1, 1) == null)
+                                    throw NotFoundException("data not found")
+                            }
+                            "CLSID" -> {
+                                //todo 액티브 엑스 확인
+                                pcIcatClsidRepository.findByPkClsidAndRunning(except.subValue1, 1).let {
+                                    throw NotFoundException("data not found")
                                 }
+                            }
+                            "IP" -> {
+                                val check: (Boolean, Boolean) -> Boolean = { a, b -> a && b}
+                                if (check(DataUtil.IPisValid(except.subValue1), DataUtil.IPisValid(except.subValue2)) == false ) {
+                                    throw ServiceException("IP input fault")
+                                }
+                                except.subValue1 = DataUtil.validateIP(except.subValue1).toString()
+                                except.subValue2 = DataUtil.validateIP(except.subValue2!!).toString()
+                            }
+                        }
+                        piel_gubuns.forEach { piel_gubun ->
+                            val piel_pk = PcIcatExpListPk(
+                                serial = request.serial,
+                                grpGubun = request.grpGubun,
+                                gubun = piel_gubun.gubun, //except.subGubun,
+                                value1 = if (piel_gubun.gubun=="IP") except.subValue1 else piel_gubun.value1!!
+                            )
+                            pcIcatExpListRepository.findByPk(piel_pk)?.let { exist ->
+                                exist.starttime = file.allowStartDate.substring(0, 10)
+                                exist.endtime = file.allowEndDate.substring(0, 10)
+                                exist.regempno = request.regEmpno
+                                exist.regdate = DateUtil.nowDateTimeString
+                                exist.allowDesc = file.allowDesc
+                                exist.value2 = if (piel_gubun.gubun == "IP") except.subValue2 else ""
+                                pcIcatExpListRepository.save(exist)
+                                //메신저 size/통제로깅 저장
+                            } ?: run {
+                                val new = PcIcatExpList(
+                                    pk = piel_pk,
+                                    starttime = file.allowStartDate.substring(0, 10),
+                                    endtime = file.allowEndDate.substring(0, 10),
+                                    regempno = request.regEmpno,
+                                    regdate = DateUtil.nowDateTimeString,
+                                    allowDesc = file.allowDesc,
+                                    value2 = if (piel_gubun.gubun == "IP") except.subValue2 else "" )
+                                pcIcatExpListRepository.save(new)
                             }
                         }
 
                     }
+                    else -> {
+                        gubun = if (request.allowLog == "N") "2" else "4"
+                        //todo delete 처리
+                    }
                 }
 
+                var actiongb : String = ""
+                pcIcatExceptionRepository.findBySerialAndGrpGubun(request.serial, request.grpGubun) ?.let { exist ->
+                    exist.allowDesc = file.allowDesc
+                    exist.gubun = gubun
+                    exist.allowFromdate = file.allowStartDate
+                    exist.allowTodate = file.allowEndDate
+                    exist.empno = (if (request.grpGubun == "P") basic.empno else null).toString()
+                    exist.hname = (if (request.grpGubun == "P") basic.hname else null).toString()
+                    exist.sdeptnm = (if (request.grpGubun == "P") basic.sdeptnm else null).toString()
+                    exist.deptcode = (if (request.grpGubun == "P") basic.deptcode else null).toString()
+                    exist.regempno = request.regEmpno
+                    exist.regdate = DateUtil.nowDateTimeString
+                    pcIcatExceptionRepository.save(exist)
+                    actiongb = "U"
+                } ?: run {
+                    val new = PcIcatException( serial = request.serial, grpGubun = request.grpGubun, allowDesc = file.allowDesc, gubun = gubun,
+                        allowFromdate = file.allowStartDate, allowTodate = file.allowEndDate,
+                        empno = (if (request.grpGubun == "P") basic.empno else null).toString(),
+                        hname = (if (request.grpGubun == "P") basic.hname else null).toString(),
+                        sdeptnm = (if (request.grpGubun == "P") basic.sdeptnm else null).toString(),
+                        deptcode = (if (request.grpGubun == "P") basic.deptcode else null).toString(),
+                        regempno = request.regEmpno, regdate = DateUtil.nowDateTimeString )
+                    pcIcatExceptionRepository.save(new)
+                    actiongb = "I"
+                }
+                //todo incopsLog insert
+                // 로그 디렉토리 적
+                val log_pk = IncopsPcexceptionLogPK(changeTime = DateUtil.nowDateTimeString,
+                    actiongb = actiongb, serial = request.serial, poGubun = "EXC_WALL01", devName = "ICAT")
 
+                val log = IncopsPcexceptionLog(pk = log_pk,
+                    empno = (if (request.grpGubun == "P") basic.empno else null).toString(),
+                    hname = (if (request.grpGubun == "P") basic.hname else null).toString(),
+                    poGubundtl = "ICAT",
+                    sdeptnm = (if (request.grpGubun == "P") basic.sdeptnm else null).toString(),
+                    deptcode = (if (request.grpGubun == "P") basic.deptcode else null).toString(),
+                    indeptnm = (if (request.grpGubun == "P") basic.indeptnm else null).toString(),
+                    locatenm = (if (request.grpGubun == "P") basic.locatenm else null).toString(),
+                    pcGubun = (if (request.grpGubun == "P") basic.pcGubun else null).toString(),
+                    grpGubun = request.grpGubun,
+                    allowedDate = DateUtil.nowDateTimeString,
+                    allowedDesc = file.allowDesc,
+                    allowFromdate = file.allowStartDate,
+                    allowTodate = file.allowEndDate,
+                    ruleNo = null,
+                    portName = null,
+                    gubun = gubun,
+                    allowVal = gubun,
+                    logVal = request.allowLog,
+                    changer = request.regEmpno,
+                    remark1 = null, remark2 = null
+                )
+                //log 저장
+                incopsPcexceptionLogRepository.save(log)
             }
-
         }
     }
 
-    fun createExcept() {
-
-    }
+//    fun createExcept() {
+//
+//    }
 
     fun createStorage(request: AccessControlRequest) {
         //정책 조회

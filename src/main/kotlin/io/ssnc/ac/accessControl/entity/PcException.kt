@@ -154,3 +154,21 @@ data class PcIcatExpListPk(
     @Column(name = "GUBUN") val gubun: String,
     @Column(name = "VALUE1") val value1: String
 ) : Serializable
+
+@Entity
+@Table(name = "PC_ICAT_EXCEPTION", catalog = "dbo")
+data class PcIcatException (
+    @Id
+    @Column(name = "SERIAL") val serial: String,
+    @Column(name = "EMPNO") var empno: String? = null,
+    @Column(name = "HNAME") var hname: String? = null,
+    @Column(name = "SDEPTNM") var sdeptnm: String? = null,
+    @Column(name = "GUBUN") var gubun: String? = null,
+    @Column(name = "REGEMPNO") var regempno: String? = null,
+    @Column(name = "REGDATE") var regdate: String? = null,
+    @Column(name = "ALLOW_FROMDATE") var allowFromdate: String? = null,
+    @Column(name = "ALLOW_TODATE") var allowTodate: String? = null,
+    @Column(name = "ALLOW_DESC") var allowDesc: String? = null,
+    @Column(name = "DEPTCODE") var deptcode: String? = null,
+    @Column(name = "GRP_GUBUN") var grpGubun: String? = null
+) : Serializable

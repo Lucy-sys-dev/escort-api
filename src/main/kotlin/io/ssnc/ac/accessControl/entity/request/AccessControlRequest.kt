@@ -53,13 +53,13 @@ data class devices (
 data class file(
     val allowStartDate: String,
     val allowEndDate: String,
-    var allowType: String,  //0(허가), 1(통제), 2(사외만제외), 3(사내&사외모두예외)
+    var allowType: String,
     val allowDesc: String,
     val excepts: List<except>?
 )
 
 data class except(
     val subGubun: String,
-    val subValue1: String,
-    val subValue2: String?
+    var subValue1: String,
+    var subValue2: String?
 )

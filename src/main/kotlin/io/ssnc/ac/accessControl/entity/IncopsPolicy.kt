@@ -11,7 +11,7 @@ data class IncopsPolicy (
     @Column(name="value1")
     val value1: String?,
     @Column(name="value2")
-    val value2: Int?
+    var value2: Int?
 ): Serializable
 
 @Embeddable
@@ -21,5 +21,5 @@ data class IncopsPolicyPK(
     @Column(name = "pc_gubun")
     val pcGbun: String? = null,
     @Column(name = "gubun")
-    val gubun: String? = null
+    var gubun: String? = null
 ) : Serializable

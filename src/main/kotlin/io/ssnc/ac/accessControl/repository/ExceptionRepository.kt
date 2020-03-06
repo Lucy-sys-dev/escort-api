@@ -41,4 +41,17 @@ interface PcIcatAppRepository: CrudRepository<PcIcatApp, String> {
 @Repository
 interface PcIcatClsidRepository: CrudRepository<PcIcatClsid, String> {
     fun findByPk(pk: PcIcatClsidPk) : PcIcatClsid?
+    fun findByPkClsidAndRunning(clsid: String, running: Int) : PcIcatClsid?
+}
+
+@Repository
+interface PcIcatExpListRepository: CrudRepository<PcIcatExpList, String> {
+    fun findByPk(pk: PcIcatExpListPk): PcIcatExpList?
+}
+
+@Repository
+interface PcIcatExceptionRepository: CrudRepository<PcIcatException, String> {
+    fun findBySerial(serial: String): PcIcatException?
+    fun findBySerialAndGrpGubun(serial: String, grpGubun: String?): PcIcatException?
+
 }
