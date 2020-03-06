@@ -3,6 +3,7 @@ package io.ssnc.ac.accessControl.controller
 import io.ssnc.ac.accessControl.entity.request.LoginUserRequest
 import io.ssnc.ac.accessControl.entity.request.RegisterUserPwRequest
 import io.ssnc.ac.accessControl.entity.request.RegisterUserRequest
+import io.ssnc.ac.accessControl.entity.request.StatusUserRequest
 import io.ssnc.ac.accessControl.service.AuthService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -26,6 +27,9 @@ class AuthController {
 
     @PostMapping("{version}/login/user")
     fun loginUser(@RequestBody request: LoginUserRequest) = ok(authService.loginUser(request))
+
+    @GetMapping("{version}/status/user")
+    fun statusUser(@RequestBody request: StatusUserRequest) = ok(authService.statusUser(request))
 
 
 

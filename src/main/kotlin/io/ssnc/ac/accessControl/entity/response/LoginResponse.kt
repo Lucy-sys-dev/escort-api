@@ -10,3 +10,9 @@ data class LoginResponse (
     var status: String?,
     var company_name: String?
 )
+
+data class StatusResponse (
+    var affiliate: String,
+    var id: String,
+    var status: String
+)

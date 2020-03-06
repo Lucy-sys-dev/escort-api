@@ -7,7 +7,9 @@ import io.ssnc.ac.accessControl.entity.request.LoginUserRequest
 import io.ssnc.ac.accessControl.entity.request.RegisterUserPwRequest
 import io.ssnc.ac.accessControl.exception.NotFoundException
 import io.ssnc.ac.accessControl.entity.request.RegisterUserRequest
+import io.ssnc.ac.accessControl.entity.request.StatusUserRequest
 import io.ssnc.ac.accessControl.entity.response.LoginResponse
+import io.ssnc.ac.accessControl.entity.response.StatusResponse
 import io.ssnc.ac.accessControl.exception.LoginException
 import io.ssnc.ac.accessControl.repository.InsainfoRepository
 import io.ssnc.ac.accessControl.repository.PCIcatBasicRepository
@@ -75,5 +77,13 @@ class AuthService {
         return LoginResponse(affiliate = user.pk!!.affiliate!!, id = user.pk.empno!!,
             name = user.hname!!, dept_code = user.deptCode!!, emp_type = user.empType!!,
             status = user.status!!, company_name = user.companyName!!, dept_name = user.deptName!!)
+    }
+
+    @Throws(LoginException::class)
+    fun statusUser(request: StatusUserRequest) : StatusResponse {
+        val pk = pcUsersPK(empno = request.id, affiliate = request.affiliate)
+        val user = pcUsersRepository.findByPk(pk) ?: throw NotFoundException("empno is not found")
+
+        return StatusResponse(affiliate = user.pk!!.affiliate!!, id = user.pk.empno!!, status = user.status!!)
     }
 }

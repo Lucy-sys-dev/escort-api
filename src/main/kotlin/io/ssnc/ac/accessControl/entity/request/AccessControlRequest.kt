@@ -7,7 +7,8 @@ data class AccessControlRequest (
     var allowLog: String,
     val storages : List<Storage>?,
     val programs : List<Program>?,
-    val devices : List<Storage>?
+    val devices : List<Storage>?,
+    val files: List<file>?
 )
 
 data class Storage (
@@ -26,7 +27,7 @@ data class StoreRule (
     val regEmpno: String,
     val allowStartDate: String,
     val allowEndDate: String,
-    val devName: String,
+    var devName: String,
     var allowType: String,
     val allowDesc: String,
     val pgmLists: List<String>?
@@ -47,5 +48,18 @@ data class devices (
     val devName: String,
     var allowType: String,  //0(허가), 1(통제), 2(사외만제외), 3(사내&사외모두예외)
     val allowDesc: String
+)
 
+data class file(
+    val allowStartDate: String,
+    val allowEndDate: String,
+    var allowType: String,  //0(허가), 1(통제), 2(사외만제외), 3(사내&사외모두예외)
+    val allowDesc: String,
+    val excepts: List<except>?
+)
+
+data class except(
+    val subGubun: String,
+    val subValue1: String,
+    val subValue2: String?
 )

@@ -14,11 +14,17 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.PropertySource
 import org.springframework.context.annotation.PropertySources
+import org.springframework.core.io.InputStreamResource
+import org.springframework.core.io.Resource
+import org.springframework.http.ContentDisposition
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus.CREATED
 import org.springframework.http.HttpStatus.OK
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.io.File
+import java.net.URLEncoder
 import java.nio.file.Files
 import java.nio.file.Paths
 import javax.persistence.EntityManager
@@ -56,7 +62,7 @@ class MainController {
             = ResponseEntity.status(OK).body(pcExceptionService.getVersion())
 
     @PostMapping("/{appId}/download")
-    fun downloadAppFiles(@PathVariable(value="appId") appId: String, response: HttpServletResponse) {
+    fun downloadAppFiles(@PathVariable(value="appId") appId: String, response: HttpServletResponse) : ResponseEntity<Resource> {
 
         var filename =
             when (appId) {
@@ -70,14 +76,13 @@ class MainController {
         val file = getValidFile(path+filename)
         pcExceptionService.checkFile(file)
 
-        response.contentType = "application/save"
-        response.setContentLengthLong(file.length())
-        response.addHeader("Content-Disposition", "attachment; filename=${file.name}")
-        response.addHeader("Content-Transfer-Encoding", "binary")
+        val encodedFileName = URLEncoder.encode(file.name, "UTF-8")
 
-        Files.copy(Paths.get(file.path), response.outputStream)
-        response.outputStream.flush()
-
+        val headers = HttpHeaders()
+        headers.contentType = MediaType.parseMediaType("application/x-download;charset=utf-8")
+        headers.contentLength = file.length()
+        headers.contentDisposition = ContentDisposition.builder("attachment").filename(encodedFileName).build()
+        return ResponseEntity.ok().headers(headers).body(InputStreamResource(file.inputStream()))
     }
 
     @GetMapping("/search/{serial}")

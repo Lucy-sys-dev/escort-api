@@ -10,3 +10,10 @@ data class LoginUserRequest(
     @NotNull
     var pwd: String
 )
+
+data class StatusUserRequest(
+    @NotNull
+    var affiliate: String,
+    @NotNull
+    var id: String
+)
