@@ -20,9 +20,9 @@ class MainController {
 //    @GetMapping("/")
 //    fun swagger(response: HttpServletResponse) = response.sendRedirect("$servletContextPath/swagger-ui.html")
 
-//    @GetMapping("/search/{serial}")
-//    fun search(@PathVariable(value="serial") serial: String)
-//            = ResponseEntity.status(OK).body(pcExceptionService.search(serial))
+    @GetMapping("/search/{serial}")
+    fun search(@PathVariable(value="serial") serial: String)
+            = ResponseEntity.status(OK).body(pcExceptionService.searchPcIcat(serial))
 
     @PostMapping("")
     fun createAcessControl(@RequestBody request: AccessControlRequest): ResponseEntity<*> {

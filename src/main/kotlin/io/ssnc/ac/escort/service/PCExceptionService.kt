@@ -25,43 +25,16 @@ class PCExceptionService {
     companion object : KLogging()
 
     @Autowired
-    lateinit var entityManager: EntityManager
-
-    @Autowired
-    lateinit var pcIcatBasicRepository: PCIcatBasicRepository
-
-    @Autowired
-    lateinit var pcIcatDefaultRepository: PCIcatDefaultRepository
-
-    @Autowired
     lateinit var pcBasicRepository: PcBasicRepository
 
     @Autowired
-    lateinit var incopsPolicyRepository: IncopsPolicyRepository
-
-    @Autowired
-    lateinit var pfwStoreRuleRepository: PfwStoreRuleRepository
-
-    @Autowired
-    lateinit var incopsPcexceptionLogRepository: IncopsPcexceptionLogRepository
-
-    @Autowired
-    lateinit var pcExceptionRepository: PcExceptionRepository
-
-    @Autowired
-    lateinit var pcPgmListRepository: PcPgmListRepository
-
-    @Autowired
-    lateinit var pcPgmExceptionRepository: PcPgmExceptionRepository
-
-    @Autowired
-    lateinit var pfwMediaRuleRepository: PfwMediaRuleRepository
-
-    @Autowired
-    lateinit var pfwMediaExceptionRepository: PfwMediaExceptionRepository
-
-    @Autowired
     lateinit var pcIcatAppRepository: PcIcatAppRepository
+
+    @Autowired
+    lateinit var pcIcatExIpRepository: PcIcatExIpRepository
+
+    @Autowired
+    lateinit var pcIcatExHostRepository: PcIcatExHostRepository
 
     @Autowired
     lateinit var pcIcatClsidRepository: PcIcatClsidRepository
@@ -72,90 +45,132 @@ class PCExceptionService {
     @Autowired
     lateinit var pcIcatExceptionRepository: PcIcatExceptionRepository
 
-//    @Transactional
-//    fun search(serial: String) : IcatResult? {
-//
-//
-//
-//
-//        val query: StoredProcedureQuery = entityManager
-//            .createNamedStoredProcedureQuery("getIcatCtrlDefault")
-//            .setParameter("serial", serial)
-//
-//        val defaultResult : IcatCtrlDefault = query.resultList.get(0) as IcatCtrlDefault
-//        if (defaultResult.empno.isNullOrEmpty()) {
-//            throw NotFoundException("empno is null")
-//        }
-//
-//        val resultBasic = ArrayList<IcatCtrlBase>()
-//
-//        if (defaultResult.ctrlOnoff.equals("ON")) {
-//            val query1: StoredProcedureQuery = entityManager
-//                .createNamedStoredProcedureQuery("getIcatCtrlBasic")
-//
-//            val basics = query1.resultList
-//
-//            basics.forEach { it ->
-//                val icb = it as IcatCtrlBase
-//                val basic = IcatCtrlBase(ctrlGubun = icb.ctrlGubun, expType = icb.expType, expVal1 = icb.expVal1, expVal2 = icb.expVal2)
-//                resultBasic.add(basic)
-//            }
-//        }
-//        val resultException = ArrayList<IcatException>()
-//        val query2: StoredProcedureQuery = entityManager
-//            .createNamedStoredProcedureQuery("getIcatException")
-//            .setParameter("serial", serial)
-//
-//        val exceptions = query2.resultList
-//
-//        exceptions.forEach { it ->
-//            val ie = it as IcatException
-//            val exception = IcatException(serial = ie.serial, ctrlGubun = ie.ctrlGubun,
-//                                          expType = ie.expType, expVal1 = ie.expVal1, expVal2 = ie.expVal2,
-//                                          allowFromdate = ie.allowFromdate, allowTodate = ie.allowTodate)
-//            resultException.add(exception)
-//        }
-//
-//
-//        val result = IcatResult(serial = defaultResult.serial,
-//            empno = defaultResult.empno,
-//            hname = defaultResult.hname,
-//            locatenm = defaultResult.locatenm,
-//            pc_gubun = defaultResult.pcGubun,
-//            ctrl_onoff = defaultResult.ctrlOnoff,
-//            logging_onoff = defaultResult.loggingOnoff,
-//            icat_base = resultBasic,
-//            icat_exception = resultException)
-//
-//        return result
-//    }
+    @Autowired
+    lateinit var policyService: PolicyService
+
+    @Autowired
+    lateinit var pcIcatRefService: PcIcatRefService
+
+    @Autowired
+    lateinit var logService: LogService
+
+    @Autowired
+    lateinit var storageService: StorageService
+
+    @Autowired
+    lateinit var deviceService: DeviceService
+
+    @Autowired
+    lateinit var programService: ProgramService
+
+    fun searchPcIcat(serial: String) : IcatResult? {
+        //정책 조회
+        val cntrOnOff : String = policyService.checkDefaultPolicy(serial, "ICAT_ON_CTRL")
+        val logginOnOff: String = policyService.checkDefaultPolicy(serial, "ICAT_ON_LOGGING")
+
+        val basic = pcBasicRepository.findBySerial(serial)
+
+        val result = IcatResult(serial = basic.serial,
+            empno = basic.empno!!,
+            hname = basic.hname!!,
+            locatenm = basic.locatenm!!,
+            pc_gubun = basic.pcGubun!!,
+            ctrl_onoff = cntrOnOff,
+            logging_onoff = logginOnOff,
+            icat_base = if (cntrOnOff == "ON") searchPcIcatDefault() else null,
+            icat_exception = searchPcIcatIndiviaulException(serial)
+        )
+
+        return result
+    }
+
+    fun searchPcIcatDefault(): ArrayList<IcatCtrlBase> {
+        val resultBasic = ArrayList<IcatCtrlBase>()
+        // IP
+        pcIcatExIpRepository.findAll().map { it ->
+            resultBasic.add(
+                IcatCtrlBase(
+                    ctrlGubun = "PERMIT",
+                    expType = "IP",
+                    expVal1 = DataUtil.IPStringToNumber(it.pk.ip),
+                    expVal2 = it.ipEnd!!
+                )
+            )
+        }
+        // APP
+        pcIcatAppRepository.findAll().map { it ->
+            resultBasic.add(
+                IcatCtrlBase(
+                    ctrlGubun = "BLOCK",
+                    expType = "MSGR",
+                    expVal1 = it.pk!!.appexe,
+                    expVal2 = ""
+                )
+            )
+        }
+        // Host
+        pcIcatExHostRepository.findAll().map { it ->
+            resultBasic.add(
+                IcatCtrlBase(
+                    ctrlGubun = "PERMIT",
+                    expType = "HOST",
+                    expVal1 = it.pk.host,
+                    expVal2 = ""
+                )
+            )
+        }
+        return resultBasic
+    }
+
+    fun searchPcIcatIndiviaulException(serial: String) : ArrayList<IcatException>? {
+        val resultException = ArrayList<IcatException>()
+        pcIcatExpListRepository.findByPkSerial(serial)?.let { results ->
+            results.map {
+                resultException.add(
+                    IcatException(
+                        serial = it.pk.serial,
+                        ctrlGubun = it.pcIcatExp!!.gubun!!,
+                        expType = it.pk.gubun,
+                        expVal1 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.pk.value1) else it.pk.value1,
+                        expVal2 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.value2!!) else "",
+                        allowFromdate = it.starttime!!,
+                        allowTodate = it.endtime!!
+                    )
+                )
+            }
+        } ?: run {
+            pcIcatExceptionRepository.findBySerial(serial)?.let {result ->
+                resultException.add(
+                    IcatException(
+                        serial = result.serial,
+                        ctrlGubun = result.gubun!!,
+                        expType = "ALL_PERMIT",
+                        expVal1 = null,
+                        expVal2 = null,
+                        allowFromdate = result.allowFromdate!!,
+                        allowTodate = result.allowTodate!!
+                    )
+                )
+            }
+        }
+        return resultException
+    }
 
     fun createAccessControls(request: AccessControlRequest) {
         if (!request.storages.isNullOrEmpty()){
-            createStorage(request)
+            storageService.createStorage(request)
         }
         if (!request.programs.isNullOrEmpty()){
-            createProgram(request)
+            programService.createPrograms(request)
         }
         if (!request.devices.isNullOrEmpty()){
-            createDevices(request)
+            deviceService.createDevices(request)
         }
         if (!request.files.isNullOrEmpty()){
             createFiles(request)
         }
     }
 
-    // 정책 조회
-    fun searchPolicy(serial: String, gubun: String) : IncopsPolicy {
-        val pk: IncopsPolicyPK
-        if (serial.equals("ALL")) {
-            pk = IncopsPolicyPK(locatenm = "ALL", pcGbun = "Z", gubun = gubun)
-        } else {
-            val basic = pcBasicRepository.findBySerial(serial)
-            pk = IncopsPolicyPK(locatenm = basic.locatenm, pcGbun = basic.pcGubun, gubun = gubun)
-        }
-        return incopsPolicyRepository.findByPk(pk)
-    }
 
 
     fun createFiles(request: AccessControlRequest) {
@@ -171,10 +186,10 @@ class PCExceptionService {
                 //val ip_pk = IncopsPolicyPK(locatenm = basic.locatenm, pcGbun = basic.pcGubun, gubun = "ICAT_FILE_REP")
 
                 // 파일 사이즈, 통제 관리 설정
-                searchPolicy(request.serial, "ICAT_FILE_REP").let { it ->
+                policyService.searchPolicy(request.serial, "ICAT_FILE_REP", "N")?.let { it ->
                     piel_gubuns.add(PcIcatExpListTypes(gubun = "REP", value1 = it.value2.toString()))
                 }
-                searchPolicy(request.serial, "ICAT_SIZELIMIT").let { it ->
+                policyService.searchPolicy(request.serial, "ICAT_SIZELIMIT", "N")?.let { it ->
                     if ( it.value1 == "X" )
                         piel_gubuns.add(PcIcatExpListTypes(gubun = "SIZE", value1 = ""))
                     else
@@ -272,587 +287,11 @@ class PCExceptionService {
                     regEmpno = request.regEmpno, allowStartDate = file.allowStartDate, allowEndDate = file.allowEndDate,
                     devName = "ICAT", allowDesc = file.allowDesc, poGubun = "EXC_WALL01", actiongb = actiongb,
                     gubun = gubun, poGubundtl = "ICAT", logVal = request.allowLog, allowVal = gubun, remark1=null, remark2=null)
-                createLog(log)
-//                val log_pk = IncopsPcexceptionLogPK(changeTime = DateUtil.nowDateTimeString,
-//                    actiongb = actiongb, serial = request.serial, poGubun = "EXC_WALL01", devName = "ICAT")
-//
-//                val log = IncopsPcexceptionLog(pk = log_pk,
-//                    empno = (if (request.grpGubun == "P") basic.empno else null).toString(),
-//                    hname = (if (request.grpGubun == "P") basic.hname else null).toString(),
-//                    poGubundtl = "ICAT",
-//                    sdeptnm = (if (request.grpGubun == "P") basic.sdeptnm else null).toString(),
-//                    deptcode = (if (request.grpGubun == "P") basic.deptcode else null).toString(),
-//                    indeptnm = (if (request.grpGubun == "P") basic.indeptnm else null).toString(),
-//                    locatenm = (if (request.grpGubun == "P") basic.locatenm else null).toString(),
-//                    pcGubun = (if (request.grpGubun == "P") basic.pcGubun else null).toString(),
-//                    grpGubun = request.grpGubun,
-//                    allowedDate = DateUtil.nowDateTimeString,
-//                    allowedDesc = file.allowDesc,
-//                    allowFromdate = file.allowStartDate,
-//                    allowTodate = file.allowEndDate,
-//                    ruleNo = null,
-//                    portName = null,
-//                    gubun = gubun,
-//                    allowVal = gubun,
-//                    logVal = request.allowLog,
-//                    changer = request.regEmpno,
-//                    remark1 = null, remark2 = null
-//                )
-//                //log 저장
-//                incopsPcexceptionLogRepository.save(log)
+                logService.createLog(log)
             }
         }
     }
 
-    fun createStorage(request: AccessControlRequest) {
-
-        //정책 조회
-        var storeNoUse : Int = searchPolicy("ALL", "STORE_NOUSE").let { it -> it.value2!! }
-//        val ip_pk = IncopsPolicyPK(locatenm = "ALL", pcGbun = "Z", gubun = "STORE_NOUSE")
-//        val policy = incopsPolicyRepository.findByPk(ip_pk)
-//        storeNoUse = policy.value2!!
-
-        val basic = pcBasicRepository.findBySerial(request.serial)
-
-        request.storages!!.forEach { storage ->
-            if (storage.devName.equals("MOBILE-RW")) {
-                when (storage.allowType) {
-                    "A", "R" -> storage.allowType = "Y"
-                    "B" -> storage.allowType = "N"
-                }
-                storeNoUse = 0
-            }
-
-            //기존 정책 등록 여부 확인
-            var actiongb : String = ""
-            val psr_pk = PfwStoreRulePk(serial = request.serial, devName = storage.devName)
-
-            pfwStoreRuleRepository.findByPkAndGrpGubun(psr_pk, "P")?.let { exits ->
-                exits.allowType = storage.allowType
-                exits.allowLog = request.allowLog
-                exits.allowDesc = storage.allowDesc
-                exits.allowFromdate = lessData(exits.allowFromdate!!, storage.allowStartDate) //if ( exits.allowFromdate!!.toLong() < storage.allowStartDate.toLong() ) exits.allowFromdate else storage.allowStartDate
-                exits.allowTodate = storage.allowEndDate
-                exits.storeNouse = storeNoUse
-                exits.allowDate = DateUtil.nowDateToYYYYMMDD
-                exits.regEmpno = request.regEmpno
-                exits.deptcode = (if (request.grpGubun == "P") basic.deptcode else null).toString()
-                exits.lastuseTime = DateUtil.nowDateToYYYYMMDDHHMM
-
-                pfwStoreRuleRepository.save(exits)
-                actiongb = "U"
-            } ?: run {
-                val new = PfwStoreRule(pk = psr_pk,
-                    empno = (if (request.grpGubun == "P") basic.empno else null).toString(),
-                    hname = (if (request.grpGubun == "P") basic.hname else null).toString(),
-                    sdeptnm = (if (request.grpGubun == "P") basic.sdeptnm else null).toString(),
-                    indeptnm = (if (request.grpGubun == "P") basic.indeptnm else null).toString(),
-                    locatenm = (if (request.grpGubun == "P") basic.locatenm else null).toString(),
-                    allowType = storage.allowType,
-                    allowLog = request.allowLog,
-                    allowDesc = storage.allowDesc,
-                    allowFromdate = storage.allowStartDate,
-                    allowTodate = storage.allowEndDate,
-                    storeNouse = storeNoUse,
-                    allowDate = DateUtil.nowDateToYYYYMMDD,
-                    regEmpno = request.regEmpno,
-                    deptcode = (if (request.grpGubun == "P") basic.deptcode else null).toString(),
-                    lastuseTime = DateUtil.nowDateToYYYYMMDDHHMM ,
-                    grpGubun = request.grpGubun,
-                    removalAllow = null
-                )
-                pfwStoreRuleRepository.save(new)
-                actiongb = "I"
-            }
-
-            // 로그 디렉토리 적재
-            val log = ExceptionLogData(
-                serial = request.serial, grpGubun = request.grpGubun, allowLog = request.allowLog,
-                regEmpno = request.regEmpno, allowStartDate = storage.allowStartDate, allowEndDate = storage.allowEndDate,
-                devName = storage.devName, allowDesc = storage.allowDesc, poGubun = "EXC_WALL01", actiongb = actiongb,
-                gubun = storeNoUse.toString(), poGubundtl = storage.devName, logVal = request.allowLog, allowVal = storage.allowType, remark1=null, remark2=null)
-            createLog(log)
-
-//            val log_pk = IncopsPcexceptionLogPK(changeTime = DateUtil.nowDateTimeString,
-//                actiongb = actiongb, serial = request.serial, poGubun = "EXC_WALL01", devName = storage.devName)
-//
-//            val log = IncopsPcexceptionLog(pk = log_pk,
-//                empno = (if (request.grpGubun == "P") basic.empno else null).toString(),
-//                hname = (if (request.grpGubun == "P") basic.hname else null).toString(),
-//                poGubundtl = storage.devName,
-//                sdeptnm = (if (request.grpGubun == "P") basic.sdeptnm else null).toString(),
-//                deptcode = (if (request.grpGubun == "P") basic.deptcode else null).toString(),
-//                indeptnm = (if (request.grpGubun == "P") basic.indeptnm else null).toString(),
-//                locatenm = (if (request.grpGubun == "P") basic.locatenm else null).toString(),
-//                pcGubun = (if (request.grpGubun == "P") basic.pcGubun else null).toString(),
-//                grpGubun = request.grpGubun,
-//                allowedDate = DateUtil.nowDateTimeString,
-//                allowedDesc = storage.allowDesc,
-//                allowFromdate = storage.allowStartDate,
-//                allowTodate = storage.allowEndDate,
-//                ruleNo = null,
-//                portName = null,
-//                gubun = storeNoUse.toString(),
-//                allowVal = storage.allowType,
-//                logVal = request.allowLog,
-//                changer = request.regEmpno,
-//                remark1 = null, remark2 = null
-//            )
-//            //log 저장
-//            incopsPcexceptionLogRepository.save(log)
-
-            //MOBILE 장치 처리 추가
-            if (storage.devName.equals("MOBILE-RW")) {
-                val mobileTypes: Array<String> = arrayOf("T", "M", "9")
-                for (i in mobileTypes.indices) {
-                    val pce_pk = PcExceptionPk(serial = request.serial, gubun = mobileTypes[i])
-                    pcExceptionRepository.findByPk(pce_pk)?.let { exits_pc ->
-                        exits_pc.expDate = DateUtil.nowDateTimeString
-                        exits_pc.expDesc = storage.allowDesc
-                        exits_pc.value1 = if (storage.allowType == "Y") 0 else 1
-                        exits_pc.allowFromdate = lessData(exits_pc.allowFromdate!!, storage.allowStartDate) // if ( exits_pc.allowFromdate!!.toLong() < storage.allowStartDate.toLong() ) exits_pc.allowFromdate else storage.allowStartDate
-                        exits_pc.allowTodate = storage.allowEndDate
-                        exits_pc.regEmpno = request.regEmpno
-                        exits_pc.grpGubun = request.grpGubun
-                        actiongb = "U"
-
-                        pcExceptionRepository.save(exits_pc)
-                    } ?: run {
-                        val new_pce = PcException(pk = pce_pk,
-                            expDate = DateUtil.nowDateTimeString,
-                            expDesc = storage.allowDesc,
-                            value1 = if (storage.allowType == "Y") 0 else 1,
-                            allowFromdate = storage.allowStartDate,
-                            allowTodate = storage.allowEndDate,
-                            regEmpno = request.regEmpno,
-                            grpGubun = request.grpGubun
-                        )
-                        actiongb = "I"
-                        pcExceptionRepository.save(new_pce)
-                    }
-                    //log 저장
-                    log.devName = mobileTypes[i]
-                    log.actiongb = actiongb
-                    log.poGubundtl = mobileTypes[i]
-                    log.gubun = mobileTypes[i]
-                    log.allowVal = (if (storage.allowType == "Y") 0 else 1).toString()
-                    createLog(log)
-                }
-            }
-        }
-    }
-
-    fun createLog(request: ExceptionLogData) {
-        val basic = pcBasicRepository.findBySerial(request.serial)
-
-        val log_pk = IncopsPcexceptionLogPK(changeTime = DateUtil.nowDateTimeString,
-            actiongb = request.actiongb, serial = request.serial, poGubun = request.poGubun, devName = request.devName)
-
-        val log = IncopsPcexceptionLog(pk = log_pk,
-            empno = (if (request.grpGubun == "P") basic.empno else null).toString(),
-            hname = (if (request.grpGubun == "P") basic.hname else null).toString(),
-            poGubundtl = "ICAT",
-            sdeptnm = (if (request.grpGubun == "P") basic.sdeptnm else null).toString(),
-            deptcode = (if (request.grpGubun == "P") basic.deptcode else null).toString(),
-            indeptnm = (if (request.grpGubun == "P") basic.indeptnm else null).toString(),
-            locatenm = (if (request.grpGubun == "P") basic.locatenm else null).toString(),
-            pcGubun = (if (request.grpGubun == "P") basic.pcGubun else null).toString(),
-            grpGubun = request.grpGubun,
-            allowedDate = DateUtil.nowDateTimeString,
-            allowedDesc = request.allowDesc,
-            allowFromdate = request.allowStartDate,
-            allowTodate = request.allowEndDate,
-            ruleNo = null,
-            portName = null,
-            gubun = request.gubun,
-            allowVal = request.gubun,
-            logVal = request.allowLog,
-            changer = request.regEmpno,
-            remark1 = null, remark2 = null
-        )
-        //log 저장
-        incopsPcexceptionLogRepository.save(log)
-    }
-
-
-    fun createProgram(request: AccessControlRequest) {
-        request.programs!!.forEach { program ->
-            //
-            if (program.allowType == "A") program.allowType = "0"
-
-        }
-    }
-
-    fun createDevices(request: AccessControlRequest) {
-        var actiongb : String? = null
-
-        val basic = pcBasicRepository.findBySerial(request.serial)
-
-        request.devices!!.forEach { device ->
-            device.allowType =
-                when (device.allowType) {
-                    "A" -> "0"
-                    "B" -> "1"
-                    "E" -> "2"
-                    "T" -> "3"
-                    else -> "0"
-                }
-            // 1. 기존 데이터 fetch
-            val exits_pk = PcExceptionPk(serial = request.serial, gubun = device.devName)
-            pcExceptionRepository.findByPk(exits_pk)?.let { exits ->
-                exits.expDate = DateUtil.nowDateTimeString
-                exits.expDesc = device.allowDesc
-                exits.value1 = if (device.allowType == "Y") 0 else 1
-                exits.allowFromdate = lessData(device.allowEndDate, device.allowStartDate) // if ( device.allowEndDate!!.toLong() < device.allowStartDate.toLong() ) exits.allowFromdate else device.allowStartDate
-                exits.allowTodate = device.allowEndDate
-                exits.regEmpno = request.regEmpno
-                exits.grpGubun = request.grpGubun
-                actiongb = "U"
-                pcExceptionRepository.save(exits)
-            } ?: run {
-                val new_pce = PcException(pk = exits_pk,
-                    expDate = DateUtil.nowDateTimeString,
-                    expDesc = device.allowDesc,
-                    value1 = device.allowType.toInt(),
-                    allowFromdate = device.allowStartDate,
-                    allowTodate = device.allowEndDate,
-                    regEmpno = request.regEmpno,
-                    grpGubun = request.grpGubun
-                )
-                actiongb = "I"
-                pcExceptionRepository.save(new_pce)
-            }
-
-            val log_pk = IncopsPcexceptionLogPK(changeTime = DateUtil.nowDateTimeString,
-                actiongb = actiongb, serial = request.serial,
-                poGubun = when(device.devName) {
-                    "B","S","F","V","E","5","6","7","8","X" -> "EXC_CLINIC21"
-                    else -> "EXC_WALL01"
-                }, devName = device.devName)
-
-            val log = IncopsPcexceptionLog(pk = log_pk,
-                empno = (if (request.grpGubun == "P") basic.empno else null).toString(),
-                hname = (if (request.grpGubun == "P") basic.hname else null).toString(),
-                poGubundtl = device.devName,
-                sdeptnm = (if (request.grpGubun == "P") basic.sdeptnm else null).toString(),
-                deptcode = (if (request.grpGubun == "P") basic.deptcode else null).toString(),
-                indeptnm = (if (request.grpGubun == "P") basic.indeptnm else null).toString(),
-                locatenm = (if (request.grpGubun == "P") basic.locatenm else null).toString(),
-                pcGubun = (if (request.grpGubun == "P") basic.pcGubun else null).toString(),
-                grpGubun = request.grpGubun,
-                allowedDate = DateUtil.nowDateTimeString,
-                allowedDesc = device.allowDesc,
-                allowFromdate = device.allowStartDate,
-                allowTodate = device.allowEndDate,
-                ruleNo = null,
-                portName = null,
-                gubun = device.devName,
-                allowVal = device.allowType,
-                logVal = request.allowLog,
-                changer = request.regEmpno,
-                remark1 = null, remark2 = null
-            )
-            //log 저장
-            incopsPcexceptionLogRepository.save(log)
-
-            if (device.devName == "M") {
-                val storeRule = StoreRule(serial = request.serial,
-                    grpGubun = request.grpGubun, allowLog = request.allowLog, regEmpno = request.regEmpno,
-                    allowStartDate = device.allowStartDate, allowEndDate = device.allowEndDate,
-                    allowType = when(device.allowType) {
-                        "0" -> "Y"
-                        else -> "N"
-                    },
-                    pgmLists = device.pgmLists,
-                    allowDesc = device.allowDesc, devName = "M")
-                createStorage1(storeRule)
-                if (!device.pgmLists.isNullOrEmpty()) {
-                    createPgm(storeRule)
-                    storeRule.devName = "PDA"
-                    createMedia(storeRule)
-                }
-            }
-        }
-    }
-
-    fun createStorage1(request: StoreRule) {
-        //정책 조회
-//        var storeNoUse = 0
-//        val ip_pk = IncopsPolicyPK(locatenm = "ALL", pcGbun = "Z", gubun = "STORE_NOUSE")
-//        val policy = incopsPolicyRepository.findByPk(ip_pk)
-//        storeNoUse = policy.value2!!
-        var storeNoUse : Int = searchPolicy("ALL", "STORE_NOUSE").let { it -> it.value2!! }
-
-        val basic = pcBasicRepository.findBySerial(request.serial)
-
-        if (request.devName.equals("MOBILE-RW")|| request.devName.equals("M")) {
-            when (request.allowType) {
-                "A", "R" -> request.allowType = "Y"
-                "B" -> request.allowType = "N"
-            }
-            storeNoUse = 0
-        }
-
-        //기존 정책 등록 여부 확인
-        var actiongb : String? = null
-        val psr_pk = PfwStoreRulePk(serial = request.serial, devName = if (request.devName != "M") request.devName else "MOBILE-RW" )
-
-        pfwStoreRuleRepository.findByPkAndGrpGubun(psr_pk, "P")?.let { exits ->
-            exits.allowType = request.allowType
-            exits.allowLog = request.allowLog
-            exits.allowDesc = request.allowDesc
-            exits.allowFromdate = lessData(exits.allowFromdate!!,request.allowStartDate) //  if ( exits.allowFromdate!!.toLong() < request.allowStartDate.toLong() ) exits.allowFromdate else request.allowStartDate
-            exits.allowTodate = request.allowEndDate
-            exits.storeNouse = storeNoUse
-            exits.allowDate = DateUtil.nowDateToYYYYMMDD
-            exits.regEmpno = request.regEmpno
-            exits.deptcode = (if (request.grpGubun == "P") basic.deptcode else null).toString()
-            exits.lastuseTime = DateUtil.nowDateToYYYYMMDDHHMM
-
-            pfwStoreRuleRepository.save(exits)
-            actiongb = "U"
-        } ?: run {
-            val new = PfwStoreRule(pk = psr_pk,
-                empno = (if (request.grpGubun == "P") basic.empno else null).toString(),
-                hname = (if (request.grpGubun == "P") basic.hname else null).toString(),
-                sdeptnm = (if (request.grpGubun == "P") basic.sdeptnm else null).toString(),
-                indeptnm = (if (request.grpGubun == "P") basic.indeptnm else null).toString(),
-                locatenm = (if (request.grpGubun == "P") basic.locatenm else null).toString(),
-                allowType = request.allowType,
-                allowLog = request.allowLog,
-                allowDesc = request.allowDesc,
-                allowFromdate = request.allowStartDate,
-                allowTodate = request.allowEndDate,
-                storeNouse = storeNoUse,
-                allowDate = DateUtil.nowDateToYYYYMMDD,
-                regEmpno = request.regEmpno,
-                deptcode = (if (request.grpGubun == "P") basic.deptcode else null).toString(),
-                lastuseTime = DateUtil.nowDateToYYYYMMDDHHMM ,
-                grpGubun = request.grpGubun,
-                removalAllow = null
-            )
-            pfwStoreRuleRepository.save(new)
-            actiongb = "I"
-        }
-
-        // 로그 디렉토리 적
-        val log_pk = IncopsPcexceptionLogPK(changeTime = DateUtil.nowDateTimeString,
-            actiongb = actiongb, serial = request.serial, poGubun = "EXC_WALL01", devName = if (request.devName != "M") request.devName else "MOBILE-RW")
-
-        val log = IncopsPcexceptionLog(pk = log_pk,
-            empno = (if (request.grpGubun == "P") basic.empno else null).toString(),
-            hname = (if (request.grpGubun == "P") basic.hname else null).toString(),
-            poGubundtl = if (request.devName != "M") request.devName else "MOBILE-RW",
-            sdeptnm = (if (request.grpGubun == "P") basic.sdeptnm else null).toString(),
-            deptcode = (if (request.grpGubun == "P") basic.deptcode else null).toString(),
-            indeptnm = (if (request.grpGubun == "P") basic.indeptnm else null).toString(),
-            locatenm = (if (request.grpGubun == "P") basic.locatenm else null).toString(),
-            pcGubun = (if (request.grpGubun == "P") basic.pcGubun else null).toString(),
-            grpGubun = request.grpGubun,
-            allowedDate = DateUtil.nowDateTimeString,
-            allowedDesc = request.allowDesc,
-            allowFromdate = request.allowStartDate,
-            allowTodate = request.allowEndDate,
-            ruleNo = null,
-            portName = null,
-            gubun = storeNoUse.toString(),
-            allowVal = request.allowType,
-            logVal = request.allowLog,
-            changer = request.regEmpno,
-            remark1 = null, remark2 = null
-        )
-        //log 저장
-        incopsPcexceptionLogRepository.save(log)
-
-        //MOBILE 장치 처리 추가
-        if (request.devName.equals("MOBILE-RW")) {
-            var mobileTypes: Array<String> = arrayOf("T", "M", "9")
-
-            for (i in mobileTypes.indices) {
-                val pce_pk = PcExceptionPk(serial = request.serial, gubun = mobileTypes[i])
-                pcExceptionRepository.findByPk(pce_pk)?.let { exits_pc ->
-                    exits_pc.expDate = DateUtil.nowDateTimeString
-                    exits_pc.expDesc = request.allowDesc
-                    exits_pc.value1 = if (request.allowType == "Y") 0 else 1
-                    exits_pc.allowFromdate = lessData(exits_pc.allowFromdate!!, request.allowStartDate) // if ( exits_pc.allowFromdate!!.toLong() < request.allowStartDate.toLong() ) exits_pc.allowFromdate else request.allowStartDate
-                    exits_pc.allowTodate = request.allowEndDate
-                    exits_pc.regEmpno = request.regEmpno
-                    exits_pc.grpGubun = request.grpGubun
-                    actiongb = "U"
-
-                    pcExceptionRepository.save(exits_pc)
-                } ?: run {
-                    val new_pce = PcException(pk = pce_pk,
-                        expDate = DateUtil.nowDateTimeString,
-                        expDesc = request.allowDesc,
-                        value1 = if (request.allowType == "Y") 0 else 1,
-                        allowFromdate = request.allowStartDate,
-                        allowTodate = request.allowEndDate,
-                        regEmpno = request.regEmpno,
-                        grpGubun = request.grpGubun
-                    )
-                    actiongb = "I"
-                    pcExceptionRepository.save(new_pce)
-                }
-                //log 저장
-                log_pk.devName = mobileTypes[i]
-                log_pk.actiongb = actiongb
-                log.poGubundtl = mobileTypes[i]
-                log.gubun = mobileTypes[i]
-                log.allowVal = (if (request.allowType == "Y") 0 else 1).toString()
-                incopsPcexceptionLogRepository.save(log)
-            }
-        }
-    }
-
-    fun createPgm(request: StoreRule) {
-        var actiongb: String? = null
-        val basic = pcBasicRepository.findBySerial(request.serial)
-
-        request.pgmLists!!.forEach { filename ->
-            pcPgmListRepository.findTopByFileName(filename)?.let { pgm ->
-                val pce_pk = PcPgmExceptionPk(seq = pgm.seq, serial = request.serial)
-                pcPgmExceptionRepository.findByPk(pce_pk)?.let { exist ->
-                    when (request.allowType) {
-                        "1" -> {
-                            pcPgmExceptionRepository.deleteByPk(pce_pk)
-                            actiongb = "D"
-                        }
-                        else -> {
-                            exist.expDate = DateUtil.nowDateTimeString
-                            exist.expDesc = request.allowDesc
-                            exist.allowFromdate = request.allowStartDate
-                            exist.allowTodate = request.allowEndDate
-                            exist.grpGubun = request.grpGubun
-                            exist.regEmpno = request.regEmpno
-                            pcPgmExceptionRepository.save(exist)
-                            actiongb = "U"
-                        }
-                    }
-                } ?: run {
-                    if (request.allowType != "1") {
-                        val new = PcPgmException(
-                            pk = pce_pk,
-                            expDate = DateUtil.nowDateTimeString,
-                            expDesc = request.allowDesc,
-                            allowTodate = request.allowEndDate,
-                            allowFromdate = request.allowStartDate,
-                            regEmpno = request.regEmpno,
-                            grpGubun = request.grpGubun
-                        )
-                        pcPgmExceptionRepository.save(new)
-                        actiongb = "I"
-                    }
-                }
-
-                val log_pk = IncopsPcexceptionLogPK(changeTime = DateUtil.nowDateTimeString,
-                    actiongb = actiongb, serial = request.serial, poGubun = "EXC_WALL02", devName = pgm.pgmName)
-
-                val log = IncopsPcexceptionLog(pk = log_pk,
-                    empno = (if (request.grpGubun == "P") basic.empno else null).toString(),
-                    hname = (if (request.grpGubun == "P") basic.hname else null).toString(),
-                    poGubundtl = "PUBLIC_PRGM",
-                    sdeptnm = (if (request.grpGubun == "P") basic.sdeptnm else null).toString(),
-                    deptcode = (if (request.grpGubun == "P") basic.deptcode else null).toString(),
-                    indeptnm = (if (request.grpGubun == "P") basic.indeptnm else null).toString(),
-                    locatenm = (if (request.grpGubun == "P") basic.locatenm else null).toString(),
-                    pcGubun = (if (request.grpGubun == "P") basic.pcGubun else null).toString(),
-                    grpGubun = request.grpGubun,
-                    allowedDate = DateUtil.nowDateTimeString,
-                    allowedDesc = request.allowDesc,
-                    allowFromdate = request.allowStartDate,
-                    allowTodate = request.allowEndDate,
-                    ruleNo = null,
-                    portName = null,
-                    gubun = null,
-                    allowVal = request.allowType,
-                    logVal = request.allowLog,
-                    changer = request.regEmpno,
-                    remark1 = pgm.pgmName, remark2 = pgm.fileName
-                )
-                //log 저장
-                incopsPcexceptionLogRepository.save(log)
-            } ?: run {
-
-            }
-        }
-    }
-
-    fun createMedia(request: StoreRule) {
-        var actiongb: String? = null
-        val basic = pcBasicRepository.findBySerial(request.serial)
-
-        request.pgmLists!!.forEach { filename ->
-            val pmr_pk = PfwMediaRulePk(gubun = request.devName, procName = filename)
-            pfwMediaRuleRepository.findByPk(pmr_pk)?.let {
-                val pme_pk = PfwMediaExceptionPk(gubun = request.devName, serial = request.serial, procName = filename)
-                pfwMediaExceptionRepository.findByPk(pme_pk)?.let { exist ->
-                    when(request.allowType) {
-                        "1" -> {
-                            pfwMediaExceptionRepository.deleteByPk(pme_pk)
-                            actiongb = "D"
-                        }
-                        else -> {
-                            exist.regDate = DateUtil.nowDateTimeString
-                            exist.allowDesc = request.allowDesc
-                            exist.allowFromdate = request.allowStartDate
-                            exist.allowTodate = request.allowEndDate
-                            exist.allowGubun = if (request.allowType == "1") 0 else 1
-                            exist.grpGubun = request.grpGubun
-                            exist.regEmpno = request.regEmpno
-                            pfwMediaExceptionRepository.save(exist)
-                            actiongb = "U"
-                        }
-                    }
-                } ?: run {
-                    if (request.allowType != "1") {
-                        val new = PfwMediaException(
-                            pk = pme_pk,
-                            regDate = DateUtil.nowDateTimeString,
-                            allowDesc = request.allowDesc,
-                            allowTodate = request.allowEndDate,
-                            allowFromdate = request.allowStartDate,
-                            allowGubun = if (request.allowType == "1") 0 else 1,
-                            regEmpno = request.regEmpno,
-                            grpGubun = request.grpGubun
-                        )
-                        pfwMediaExceptionRepository.save(new)
-                        actiongb = "I"
-                    }
-                }
-                val log_pk = IncopsPcexceptionLogPK(changeTime = DateUtil.nowDateTimeString,
-                    actiongb = actiongb, serial = request.serial, poGubun = "EXC_WALL03", devName = pme_pk.gubun)
-
-                val log = IncopsPcexceptionLog(pk = log_pk,
-                    empno = (if (request.grpGubun == "P") basic.empno else null).toString(),
-                    hname = (if (request.grpGubun == "P") basic.hname else null).toString(),
-                    poGubundtl = "DEVICE_PRGM",
-                    sdeptnm = (if (request.grpGubun == "P") basic.sdeptnm else null).toString(),
-                    deptcode = (if (request.grpGubun == "P") basic.deptcode else null).toString(),
-                    indeptnm = (if (request.grpGubun == "P") basic.indeptnm else null).toString(),
-                    locatenm = (if (request.grpGubun == "P") basic.locatenm else null).toString(),
-                    pcGubun = (if (request.grpGubun == "P") basic.pcGubun else null).toString(),
-                    grpGubun = request.grpGubun,
-                    allowedDate = DateUtil.nowDateTimeString,
-                    allowedDesc = request.allowDesc,
-                    allowFromdate = request.allowStartDate,
-                    allowTodate = request.allowEndDate,
-                    ruleNo = null,
-                    portName = null,
-                    gubun = pme_pk.gubun,
-                    allowVal = (if (request.allowType == "1") 0 else 1).toString(),
-                    logVal = request.allowLog,
-                    changer = request.regEmpno,
-                    remark1 = pme_pk.procName
-                )
-                //log 저장
-                incopsPcexceptionLogRepository.save(log)
-            }
-        }
-    }
-
-
-
-    val lessData: (String, String) -> String = { a, b -> min(a.toLong(), b.toLong()).toString() }
-    val check: (Boolean, Boolean) -> Boolean = { a, b -> a && b}
+//    val lessData: (String, String) -> String = { a, b -> min(a.toLong(), b.toLong()).toString() }
+//    val check: (Boolean, Boolean) -> Boolean = { a, b -> a && b}
 }

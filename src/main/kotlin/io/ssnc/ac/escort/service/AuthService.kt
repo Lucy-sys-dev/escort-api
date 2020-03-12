@@ -10,9 +10,11 @@ import io.ssnc.ac.escort.entity.request.StatusUserRequest
 import io.ssnc.ac.escort.entity.response.LoginResponse
 import io.ssnc.ac.escort.entity.response.StatusResponse
 import io.ssnc.ac.escort.exception.LoginException
+import io.ssnc.ac.escort.exception.PasswordException
 import io.ssnc.ac.escort.repository.InsainfoRepository
 import io.ssnc.ac.escort.repository.PcBasicRepository
 import io.ssnc.ac.escort.repository.PcUsersReposiroty
+import io.ssnc.ac.escort.util.DataUtil
 import io.ssnc.ac.escort.util.DateUtil
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Autowired
@@ -59,6 +61,8 @@ class AuthService {
     fun registerUserPwd(request: RegisterUserPwRequest){
         val pk = pcUsersPK(empno = request.id, affiliate = request.affiliate)
         val user = pcUsersRepository.findByPk(pk) ?: throw NotFoundException("empno is not found")
+        if (user.password == request.pwd) throw PasswordException("Please enter valid password")
+        if (!DataUtil.isValidPassword(request.pwd)) throw PasswordException("Please enter valid password")
         user.password = request.pwd
         user.changePwdDt = Date()
         pcUsersRepository.save(user)

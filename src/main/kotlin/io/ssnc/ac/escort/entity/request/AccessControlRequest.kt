@@ -8,6 +8,7 @@ data class AccessControlRequest (
     val storages : List<Storage>?,
     val programs : List<Program>?,
     val devices : List<Storage>?,
+    val aps: List<Storage>,
     val files: List<file>?
 )
 

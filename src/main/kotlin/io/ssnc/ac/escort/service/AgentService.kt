@@ -10,6 +10,7 @@ import io.ssnc.ac.escort.repository.SsaClassstackVerinfoRepository
 import io.ssnc.ac.escort.util.DateUtil
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.io.File
 import javax.transaction.Transactional
@@ -28,9 +29,11 @@ class AgentService {
     lateinit var pcBasicRepository: PcBasicRepository
 
     @Transactional
-    fun getVersion(): SsaClaastackVerinfo {
+    fun getVersion(): SsaClaastackVerinfo? {
+        val sortedByRegDateDesc = Sort(Sort.Direction.DESC, "REG_DATE")
         val results = ssaClassstackVerinfoRepository.findAll()
-        return results.last()
+        //return datas.first()
+        return results.last()//.first()
     }
 
     fun checkFile(file: File) {

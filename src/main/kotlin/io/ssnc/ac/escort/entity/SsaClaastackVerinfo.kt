@@ -1,15 +1,17 @@
 package io.ssnc.ac.escort.entity
 
 import java.io.Serializable
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.Id
-import javax.persistence.Table
+import java.util.*
+import javax.persistence.*
 
 @Entity
 @Table(name = "SSA_CALLSTACK_VERINFO", catalog = "dbo")
 data class SsaClaastackVerinfo (
     @Id
+    @Column(name = "REG_DATE")
+    @Temporal( TemporalType.TIMESTAMP )
+    var regDate: Date,
+
     @Column(name = "ssaver")
     var ssaver : String,
 
