@@ -10,9 +10,9 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.SQLServer2012Dialect
   datasource:
-    #url: jdbc:sqlserver://192.168.1.156:1433 #jdbc:sqlserver://escort.cl8sezajlvwe.ap-northeast-2.rds.amazonaws.com:1433;database=incops5
-    #username: pcman #ssncuser
-    #password: 20incops05 #qhdks!2550
+#    url: jdbc:sqlserver://192.168.1.156:1433 #jdbc:sqlserver://escort.cl8sezajlvwe.ap-northeast-2.rds.amazonaws.com:1433;database=incops5
+#    username: pcman #ssncuser
+#    password: 20incops05 #qhdks!2550
     url: jdbc:sqlserver://escort.cl8sezajlvwe.ap-northeast-2.rds.amazonaws.com:1433;database=incops5
     username: ssncuser
     password: qhdks!2550
@@ -35,10 +35,11 @@ downloadfile:
   path:
 
 logging.level:
-  org.hibernate.type: trace
-  org.hibernate.stat: debug
-  org.springframework.security: debug
+  org.hibernate.type: error
+  org.hibernate.stat: error
+  org.springframework.security: error
   org.springframework.web: error
+  org.springframework.boot.autoconfigure: error
 
 #database:
 #  name: incops5

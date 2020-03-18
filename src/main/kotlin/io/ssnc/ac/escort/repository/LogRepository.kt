@@ -15,5 +15,5 @@ interface IncopsPcexceptionLogRepository: JpaRepository<IncopsPcexceptionLog, St
 
 @Repository
 interface IncopsPolicyRepository : JpaRepository<IncopsPolicy, String> {
-    fun findByPk(pk: IncopsPolicyPK) : IncopsPolicy
+    fun findByPk(pk: IncopsPolicyPK) : IncopsPolicy?
 }

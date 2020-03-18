@@ -71,3 +71,12 @@ data class pcUsersPK(
     @Column(name = "EMPNO") val empno: String? = null,
     @Column(name = "AFFILIATE") val affiliate: String? = null
 ) : Serializable
+
+@Entity
+@Table(name = "HB_COMPANY", catalog = "dbo")
+data class HbCompany (
+    @Id
+    @Column(name = "COMPANY_CODE") val companyCode: String,
+    @Column(name = "COMPANY_NAME") val companyName: String? = null,
+    @Column(name = "COMPANY_ENGNAME") var companyEngname: String? = null
+) : Serializable

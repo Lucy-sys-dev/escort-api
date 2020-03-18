@@ -8,6 +8,7 @@ data class AccessControlRequest (
     val storages : List<Storage>?,
     val programs : List<Program>?,
     val devices : List<Storage>?,
+    val aps: List<Storage>,
     val files: List<file>?
 )
 
@@ -62,4 +63,8 @@ data class except(
     val subGubun: String,
     var subValue1: String,
     var subValue2: String?
+)
+
+data class TeminateRequest(
+    val password: String
 )

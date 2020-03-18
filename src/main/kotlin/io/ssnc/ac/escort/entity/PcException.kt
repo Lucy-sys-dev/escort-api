@@ -109,12 +109,57 @@ data class PcIcatApp (
     @Column(name = "REGEMPNO") var regempno: String? = null,
     @Column(name = "REGDATE") var regdate: String? = null,
     @Column(name = "RUNNING") var running: Int? = null
-) : Serializable
+) : Serializable {
+    @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    @JoinColumn(name = "REGEMPNO",referencedColumnName="EMPNO", insertable = false, updatable = false)
+    var regEmpno: PcBasic? = null
+}
 
 @Embeddable
 data class PcIcatAppPk(
     @Column(name = "APPEXE") val appexe: String,
     @Column(name = "APPNAME") val appname: String
+) : Serializable
+
+@Entity
+@Table(name = "PC_ICAT_EX_IP", catalog = "dbo")
+data class PcIcatExIp (
+    @EmbeddedId
+    val pk: PcIcatExIpPk,
+    @Column(name = "REGEMPNO") var regempno: String? = null,
+    @Column(name = "REGDATE") var regdate: String? = null,
+    @Column(name = "RUNNING") var running: Int? = null,
+    @Column(name = "IP_END") var ipEnd: String? = null
+) : Serializable {
+    @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    @JoinColumn(name = "REGEMPNO",referencedColumnName="EMPNO", insertable = false, updatable = false)
+    var regEmpno: PcBasic? = null
+}
+
+@Embeddable
+data class PcIcatExIpPk(
+    @Column(name = "SITENAME") val sitename: String,
+    @Column(name = "IP") val ip: String
+) : Serializable
+
+@Entity
+@Table(name = "PC_ICAT_EX_HOST", catalog = "dbo")
+data class PcIcatExHost (
+    @EmbeddedId
+    val pk: PcIcatExHostPk,
+    @Column(name = "REGEMPNO") var regempno: String? = null,
+    @Column(name = "REGDATE") var regdate: String? = null,
+    @Column(name = "RUNNING") var running: Int? = null
+) : Serializable {
+    @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    @JoinColumn(name = "REGEMPNO",referencedColumnName="EMPNO", insertable = false, updatable = false)
+    var regEmpno: PcBasic? = null
+}
+
+@Embeddable
+data class PcIcatExHostPk(
+    @Column(name = "SITENAME") val sitename: String,
+    @Column(name = "HOST") val host: String
 ) : Serializable
 
 @Entity
@@ -137,15 +182,18 @@ data class PcIcatClsidPk(
 @Table(name = "PC_ICAT_EXP_LIST", catalog = "dbo")
 data class PcIcatExpList (
     @EmbeddedId
-    val pk: PcIcatExpListPk? = null,
+    val pk: PcIcatExpListPk,
     @Column(name = "VALUE2") var value2: String? = null,
     @Column(name = "STARTTIME") var starttime: String? = null,
     @Column(name = "ENDTIME") var endtime: String? = null,
     @Column(name = "REGEMPNO") var regempno: String? = null,
     @Column(name = "REGDATE") var regdate: String? = null,
     @Column(name = "ALLOW_DESC") var allowDesc: String? = null
-
-) : Serializable
+) : Serializable {
+    @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    @JoinColumn(name = "SERIAL",referencedColumnName="SERIAL", insertable = false, updatable = false)
+    var pcIcatExp: PcIcatException? = null
+}
 
 @Embeddable
 data class PcIcatExpListPk(
@@ -171,4 +219,55 @@ data class PcIcatException (
     @Column(name = "ALLOW_DESC") var allowDesc: String? = null,
     @Column(name = "DEPTCODE") var deptcode: String? = null,
     @Column(name = "GRP_GUBUN") var grpGubun: String? = null
+) : Serializable
+
+@Entity
+@Table(name = "PC_EXCEPTION_MULTI", catalog = "dbo")
+data class PcExceptionMulti (
+    @EmbeddedId
+    val pk: PcExceptionMultiPk,
+    @Column(name = "EXP_DATE") var expDate: String? = null,
+    @Column(name = "EXP_DESC") var expDesc: String? = null,
+    @Column(name = "REG_EMPNO") var regEmpno: String? = null,
+    @Column(name = "GRP_GUBUN") var grpGubun: String? = null
+) : Serializable {
+}
+
+@Embeddable
+data class PcExceptionMultiPk(
+    @Column(name = "SERIAL") val serial: String,
+    @Column(name = "GUBUN") val gubun: String,
+    @Column(name = "VALUE1") val value1: Int,
+    @Column(name = "ALLOW_FROMDATE") val allowFromdate: String,
+    @Column(name = "ALLOW_TODATE") val allowTodate: String
+) : Serializable
+
+@Entity
+@Table(name = "PC_EXCEPTION_MULTI_LOG", catalog = "dbo")
+data class PcExceptionMultiLog (
+    @EmbeddedId
+    val pk: PcExceptionMultiLogPk,
+    @Column(name = "OLD_EXP_DATE") var oldExpDate: String? = null,
+    @Column(name = "OLD_EXP_DESC") var oldExpDesc: String? = null,
+    @Column(name = "OLD_VALUE1") var oldValue1: Int? = null,
+    @Column(name = "OLD_ALLOW_FROMDATE") var oldAllowFromdate: String? = null,
+    @Column(name = "OLD_ALLOW_TODATE") var oldAllowTodate: String? = null,
+    @Column(name = "OLD_REG_EMPNO") var oldRegEmpno: String? = null,
+    @Column(name = "OLD_GRP_GUBUN") var oldGrpGubun: String? = null,
+    @Column(name = "NEW_EXP_DATE") var newExpDate: String? = null,
+    @Column(name = "NEW_EXP_DESC") var newExpDesc: String? = null,
+    @Column(name = "NEW_VALUE1") var newValue1: Int? = null,
+    @Column(name = "NEW_ALLOW_FROMDATE") var newAllowFromdate: String? = null,
+    @Column(name = "NEW_ALLOW_TODATE") var newAllowTodate: String? = null,
+    @Column(name = "NEW_REG_EMPNO") var newRegEmpno: String? = null,
+    @Column(name = "NEW_GRP_GUBUN") var newGrpGubun: String? = null
+
+) : Serializable {
+}
+
+@Embeddable
+data class PcExceptionMultiLogPk(
+    @Column(name = "LOG_TIME") val logTime: String,
+    @Column(name = "SERIAL") val serial: String,
+    @Column(name = "GUBUN") val gubun: String
 ) : Serializable

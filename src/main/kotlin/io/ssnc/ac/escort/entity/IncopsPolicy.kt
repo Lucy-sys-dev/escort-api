@@ -23,3 +23,15 @@ data class IncopsPolicyPK(
     @Column(name = "gubun")
     var gubun: String? = null
 ) : Serializable
+
+@Entity
+@Table(name = "PC_EXITPW", catalog = "dbo")
+data class PcExitpw (
+    @Id
+    @Column(name = "EVENT_TIME")
+    val eventTime: String,
+    @Column(name="PASSWD")
+    val passwd: String,
+    @Column(name="PASSWD_KEY")
+    var passwdKey: String
+): Serializable

@@ -1,5 +1,6 @@
 package io.ssnc.ac.escort.repository
 
+import io.ssnc.ac.escort.entity.HbCompany
 import io.ssnc.ac.escort.entity.Insainfo
 import io.ssnc.ac.escort.entity.pcUsers
 import io.ssnc.ac.escort.entity.pcUsersPK
@@ -14,5 +15,9 @@ interface InsainfoRepository: CrudRepository<Insainfo, String> {
 @Repository
 interface PcUsersReposiroty: CrudRepository<pcUsers, String> {
     fun findByPk(pk: pcUsersPK) : pcUsers?
+}
 
+@Repository
+interface HbCompanyReposiroty: CrudRepository<HbCompany, String> {
+    fun findByCompanyCode(companyCode: String): HbCompany
 }

@@ -10,14 +10,19 @@ import io.ssnc.ac.escort.entity.request.StatusUserRequest
 import io.ssnc.ac.escort.entity.response.LoginResponse
 import io.ssnc.ac.escort.entity.response.StatusResponse
 import io.ssnc.ac.escort.exception.LoginException
+import io.ssnc.ac.escort.exception.PasswordException
+import io.ssnc.ac.escort.repository.HbCompanyReposiroty
 import io.ssnc.ac.escort.repository.InsainfoRepository
 import io.ssnc.ac.escort.repository.PcBasicRepository
 import io.ssnc.ac.escort.repository.PcUsersReposiroty
+import io.ssnc.ac.escort.util.DataUtil
 import io.ssnc.ac.escort.util.DateUtil
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 @Service
 class AuthService {
@@ -31,6 +36,9 @@ class AuthService {
 
     @Autowired
     lateinit var pcUsersRepository: PcUsersReposiroty
+
+    @Autowired
+    lateinit var hbCompanyReposiroty: HbCompanyReposiroty
 
     @Throws(NotFoundException::class)
     fun registerUser(request: RegisterUserRequest){
@@ -58,7 +66,9 @@ class AuthService {
     @Throws(NotFoundException::class)
     fun registerUserPwd(request: RegisterUserPwRequest){
         val pk = pcUsersPK(empno = request.id, affiliate = request.affiliate)
-        val user = pcUsersRepository.findByPk(pk) ?: throw NotFoundException("empno is not found")
+        val user = pcUsersRepository.findByPk( pk) ?: throw NotFoundException("empno is not found")
+        if (user.password == request.pwd) throw PasswordException("Please enter valid password")
+        if (!DataUtil.isValidPassword(request.pwd)) throw PasswordException("Please enter valid password")
         user.password = request.pwd
         user.changePwdDt = Date()
         pcUsersRepository.save(user)
@@ -94,5 +104,19 @@ class AuthService {
         val user = pcUsersRepository.findByPk(pk) ?: throw NotFoundException("empno is not found")
 
         return StatusResponse(affiliate = user.pk!!.affiliate!!, id = user.pk.empno!!, status = user.status!!)
+    }
+
+    fun searchAffiliate(): HashMap<String, HashMap<String, String>> {
+//        val result = HashMap<String, ArrayList<HashMap<String, String>>>()
+        val result = HashMap<String, HashMap<String, String>>()
+        //val result = {};
+        hbCompanyReposiroty.findAll().forEach { it ->
+            val data = hbCompanyReposiroty.findByCompanyCode(it.companyCode)
+            val detail = HashMap<String, String>()
+            detail.put("KOR", data.companyName!!)
+            detail.put("ENG", data.companyEngname!!)
+            result.put(it.companyCode, detail)
+        }
+        return result
     }
 }
