@@ -124,21 +124,8 @@ class PCExceptionService {
 
     fun searchPcIcatIndiviaulException(serial: String) : ArrayList<IcatException>? {
         val resultException = ArrayList<IcatException>()
-        pcIcatExpListRepository.findByPkSerial(serial)?.let { results ->
-            results.map {
-                resultException.add(
-                    IcatException(
-                        serial = it.pk.serial,
-                        ctrlGubun = it.pcIcatExp!!.gubun!!,
-                        expType = it.pk.gubun,
-                        expVal1 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.pk.value1) else it.pk.value1,
-                        expVal2 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.value2!!) else "",
-                        allowFromdate = it.starttime!!,
-                        allowTodate = it.endtime!!
-                    )
-                )
-            }
-        } ?: run {
+        val results = pcIcatExpListRepository.findByPkSerial(serial)
+        if (results.isNullOrEmpty()) {
             pcIcatExceptionRepository.findBySerial(serial)?.let {result ->
                 resultException.add(
                     IcatException(
@@ -152,7 +139,50 @@ class PCExceptionService {
                     )
                 )
             }
+        } else {
+            results.map {
+                resultException.add(
+                    IcatException(
+                        serial = it.pk.serial,
+                        ctrlGubun = it.pcIcatExp!!.gubun!!,
+                        expType = it.pk.gubun,
+                        expVal1 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.pk.value1) else it.pk.value1,
+                        expVal2 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.value2!!) else "",
+                        allowFromdate = it.starttime!!,
+                        allowTodate = it.endtime!!
+                    )
+                )
+            }
         }
+//        pcIcatExpListRepository.findByPkSerial(serial)?.let { results ->
+//            results.map {
+//                resultException.add(
+//                    IcatException(
+//                        serial = it.pk.serial,
+//                        ctrlGubun = it.pcIcatExp!!.gubun!!,
+//                        expType = it.pk.gubun,
+//                        expVal1 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.pk.value1) else it.pk.value1,
+//                        expVal2 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.value2!!) else "",
+//                        allowFromdate = it.starttime!!,
+//                        allowTodate = it.endtime!!
+//                    )
+//                )
+//            }
+//        } ?: run {
+//            pcIcatExceptionRepository.findBySerial(serial)?.let {result ->
+//                resultException.add(
+//                    IcatException(
+//                        serial = result.serial,
+//                        ctrlGubun = result.gubun!!,
+//                        expType = "ALL_PERMIT",
+//                        expVal1 = null,
+//                        expVal2 = null,
+//                        allowFromdate = result.allowFromdate!!,
+//                        allowTodate = result.allowTodate!!
+//                    )
+//                )
+//            }
+//        }
         return resultException
     }
 
