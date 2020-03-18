@@ -64,3 +64,7 @@ data class except(
     var subValue1: String,
     var subValue2: String?
 )
+
+data class TeminateRequest(
+    val password: String
+)

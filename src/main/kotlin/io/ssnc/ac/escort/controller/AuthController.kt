@@ -30,6 +30,9 @@ class AuthController {
     @GetMapping("{version}/status/user")
     fun statusUser(@RequestBody request: StatusUserRequest) = ok(authService.statusUser(request))
 
+    @GetMapping("{version}/search/affiliate")
+    fun searchAffiliate() = ok(authService.searchAffiliate())
+
 
 
 }

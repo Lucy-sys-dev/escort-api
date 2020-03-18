@@ -1,6 +1,7 @@
 package io.ssnc.ac.escort.controller
 
 import io.ssnc.ac.escort.entity.request.LogRequest
+import io.ssnc.ac.escort.entity.request.TeminateRequest
 import io.ssnc.ac.escort.service.AgentService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -13,7 +14,7 @@ import java.net.URLEncoder
 import javax.servlet.http.HttpServletResponse
 
 @RestController
-@RequestMapping("/escort/access-control")
+@RequestMapping("/escort")
 class AgentController {
     @Value("\${downloadfile.path}")
     private val path: String = "C:\\text\\"
@@ -33,10 +34,10 @@ class AgentController {
     @Autowired
     lateinit var agentService: AgentService
 
-    @GetMapping("/version")
+    @GetMapping("/access-control/version")
     fun getVersion() = ResponseEntity.status(HttpStatus.OK).body(agentService.getVersion())
 
-    @PostMapping("/{appId}/download")
+    @PostMapping("/access-control/{appId}/download")
     fun downloadAppFiles(@PathVariable(value="appId") appId: String, response: HttpServletResponse) : ResponseEntity<Resource> {
         val filename =
             when (appId) {
@@ -59,10 +60,15 @@ class AgentController {
         return ResponseEntity.ok().headers(headers).body(InputStreamResource(file.inputStream()))
     }
 
-    @PostMapping("/log")
+    @PostMapping("/access-control/log")
     fun createLog(@RequestBody request: LogRequest) : ResponseEntity<*> {
         agentService.createLog(request)
         return ResponseEntity.status(HttpStatus.CREATED).build<Any>()
+    }
+
+    @PostMapping("/{version}/teminate")
+    fun teminate(@PathVariable(value="version") version: String, @RequestBody request: TeminateRequest) : ResponseEntity<*> {
+        return ResponseEntity.status(HttpStatus.OK).body(agentService.teminate(request))
     }
 
     private fun getValidFile(path: String?) = File(stripRelative(path.orEmpty()))

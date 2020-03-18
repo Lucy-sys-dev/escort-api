@@ -77,6 +77,21 @@ data class IcatException (
     var allowTodate: String
 ) : Serializable
 
+@Entity
+@NamedStoredProcedureQuery(
+    name = "getTerminatePassword",
+    procedureName = "dbo.UFN_ENCRYPT",
+    resultClasses = [IcatException::class],
+    parameters = [
+        StoredProcedureParameter(name = "P_STR", type = String::class, mode = ParameterMode.IN),
+        StoredProcedureParameter(name = "P_KEY", type = String::class, mode = ParameterMode.IN),
+        StoredProcedureParameter(name = "", type = String::class, mode = ParameterMode.OUT)
+    ]
+)
+data class Terminate (
+    @Id
+    var key: String
+) : Serializable
 
 
 
