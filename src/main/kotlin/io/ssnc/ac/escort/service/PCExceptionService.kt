@@ -93,7 +93,7 @@ class PCExceptionService {
                     ctrlGubun = "PERMIT",
                     expType = "IP",
                     expVal1 = DataUtil.IPStringToNumber(it.pk.ip),
-                    expVal2 = it.ipEnd!!
+                    expVal2 = DataUtil.IPStringToNumber(it.ipEnd!!)
                 )
             )
         }

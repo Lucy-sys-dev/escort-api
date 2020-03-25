@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository
 @Repository
 interface PcBasicRepository: CrudRepository<PcBasic, String> {
     fun findBySerial(serial: String): PcBasic
+    fun findByEmpno(empno: String) : List<PcBasic>?
 }

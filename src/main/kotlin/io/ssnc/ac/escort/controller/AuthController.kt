@@ -6,6 +6,8 @@ import io.ssnc.ac.escort.entity.request.RegisterUserRequest
 import io.ssnc.ac.escort.entity.request.StatusUserRequest
 import io.ssnc.ac.escort.service.AuthService
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.http.ResponseEntity.*
 import org.springframework.web.bind.annotation.*
 
@@ -32,6 +34,11 @@ class AuthController {
 
     @GetMapping("{version}/search/affiliate")
     fun searchAffiliate() = ok(authService.searchAffiliate())
+
+    @GetMapping("{version}/search/user/{empno}")
+    fun searchUser(@PathVariable("version") version: String, @PathVariable("empno") empno: String) : ResponseEntity<*> {
+        return ResponseEntity.status(HttpStatus.OK).body(authService.getUserById(empno))
+    }
 
 
 

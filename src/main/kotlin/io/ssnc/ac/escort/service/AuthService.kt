@@ -1,5 +1,6 @@
 package io.ssnc.ac.escort.service
 
+import io.ssnc.ac.escort.entity.PcBasic
 import io.ssnc.ac.escort.entity.pcUsers
 import io.ssnc.ac.escort.entity.pcUsersPK
 import io.ssnc.ac.escort.entity.request.LoginUserRequest
@@ -118,5 +119,10 @@ class AuthService {
             result.put(it.companyCode, detail)
         }
         return result
+    }
+
+    fun getUserById(empno: String): List<PcBasic>? {
+        return pcBasicRepository.findByEmpno(empno)
+
     }
 }

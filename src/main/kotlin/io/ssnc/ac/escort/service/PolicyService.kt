@@ -28,7 +28,7 @@ class PolicyService {
             when (companyPolicy) {
                 "A" -> pk = IncopsPolicyPK(locatenm = "ALL", pcGbun = basic.pcGubun, gubun = gubun)
                 "Y" -> pk = IncopsPolicyPK(locatenm = basic.locatenm, pcGbun = "Z", gubun = gubun)
-                else -> IncopsPolicyPK(locatenm = basic.locatenm, pcGbun = basic.pcGubun, gubun = gubun)
+                else -> pk = IncopsPolicyPK(locatenm = basic.locatenm, pcGbun = basic.pcGubun, gubun = gubun)
             }
         }
         return incopsPolicyRepository.findByPk(pk)
