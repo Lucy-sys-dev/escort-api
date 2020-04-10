@@ -282,4 +282,8 @@ class StorageService {
             }
         }
     }
+
+    fun searchStorageBySerial(serial: String) : List<PfwStoreRule> ? {
+        return pfwStoreRuleRepository.findByPkSerial(serial)
+    }
 }

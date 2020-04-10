@@ -25,6 +25,9 @@ data class SsaClaastackVerinfo (
     var edPlp: String?,
 
     @Column(name = "ed_site")
-    var edSite: String?
+    var edSite: String?,
+
+    @Column(name = "sync_time")
+    var syncTime: Int?
 
 ) : Serializable

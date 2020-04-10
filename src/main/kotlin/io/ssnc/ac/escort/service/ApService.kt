@@ -30,7 +30,7 @@ class ApService {
     lateinit var logService: LogService
 
     fun createAps(request: AccessControlRequest) {
-        request.aps.forEach { ap ->
+        request.aps!!.forEach { ap ->
             pcExceptionMultiRepository.deleteByPkSerialAndPkGubunAndPkAllowTodateLessThan(request.serial, ap.devName, ap.allowEndDate)
             val pk = PcExceptionPk(serial = request.serial, gubun = ap.devName)
             pcExceptionRepository.findByPkAndAllowTodateGreaterThan(pk, ap.allowEndDate)?.let { exist ->

@@ -8,7 +8,7 @@ data class AccessControlRequest (
     val storages : List<Storage>?,
     val programs : List<Program>?,
     val devices : List<Storage>?,
-    val aps: List<Storage>,
+    val aps: List<Storage>?,
     val files: List<file>?
 )
 
@@ -67,4 +67,14 @@ data class except(
 
 data class TeminateRequest(
     val password: String
+)
+
+data class CreateUsbDeviceRequest(
+    val serial: String,
+    val usbSerial: String,
+    val allowStartDate: String,
+    val allowEndDate: String,
+    val running: String,
+    val comment: String? = null,
+    val vpid: String?
 )

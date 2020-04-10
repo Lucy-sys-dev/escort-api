@@ -9,4 +9,5 @@ import org.springframework.stereotype.Repository
 interface PfwStoreRuleRepository : JpaRepository<PfwStoreRule, String> {
     fun findByPk(pk: PfwStoreRulePk) : PfwStoreRule?
     fun findByPkAndGrpGubun(pk: PfwStoreRulePk, grpGubun: String) : PfwStoreRule?
+    fun findByPkSerial(serial: String): List<PfwStoreRule>?
 }

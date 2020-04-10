@@ -1,13 +1,12 @@
 package io.ssnc.ac.escort.service
 
-import io.ssnc.ac.escort.entity.PcException
-import io.ssnc.ac.escort.entity.PcExceptionPk
-import io.ssnc.ac.escort.entity.PcPgmException
-import io.ssnc.ac.escort.entity.PcPgmExceptionPk
+import io.ssnc.ac.escort.entity.*
 import io.ssnc.ac.escort.entity.request.AccessControlRequest
 import io.ssnc.ac.escort.entity.request.StoreRule
 import io.ssnc.ac.escort.repository.PcBasicRepository
 import io.ssnc.ac.escort.repository.PcExceptionRepository
+import io.ssnc.ac.escort.repository.PcRegUsbdeviceRepository
+import io.ssnc.ac.escort.repository.PcRegUsbexceptionRepository
 import io.ssnc.ac.escort.service.model.ExceptionLogData
 import io.ssnc.ac.escort.util.DataUtil
 import io.ssnc.ac.escort.util.DateUtil
@@ -39,6 +38,12 @@ class DeviceService {
 
     @Autowired
     lateinit var mediaService: MediaService
+
+    @Autowired
+    lateinit var pcRegUsbdeviceRepository: PcRegUsbdeviceRepository
+
+    @Autowired
+    lateinit var pcRegUsbexceptionRepository: PcRegUsbexceptionRepository
 
     fun createDevices(request: AccessControlRequest) {
         var actiongb : String = ""
@@ -128,5 +133,17 @@ class DeviceService {
                 }
             }
         }
+    }
+
+    fun searchPcExceptionBySerial(serial: String) : List<PcException>? {
+        return pcExceptionRepository.findByPkSerial(serial)
+    }
+
+    fun createUsbDevice(pcRegUsbdevice: PcRegUsbdevice) {
+        pcRegUsbdeviceRepository.save(pcRegUsbdevice)
+    }
+
+    fun searchUsbExceptionBySerial(serial: String) : List<PcRegUsbexception>? {
+        return pcRegUsbexceptionRepository.findByPkSerial(serial)
     }
 }

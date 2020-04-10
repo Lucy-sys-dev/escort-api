@@ -2,6 +2,7 @@ package io.ssnc.ac.escort.controller
 
 //import io.ssnc.ac.accessControl.repository.PCIcatRepository
 import io.ssnc.ac.escort.entity.request.AccessControlRequest
+import io.ssnc.ac.escort.entity.request.CreateUsbDeviceRequest
 import io.ssnc.ac.escort.service.PCExceptionService
 
 import org.springframework.beans.factory.annotation.Autowired
@@ -11,7 +12,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/escort/access-control")
+@RequestMapping("/escort")
 class MainController {
 
     @Autowired
@@ -20,15 +21,24 @@ class MainController {
 //    @GetMapping("/")
 //    fun swagger(response: HttpServletResponse) = response.sendRedirect("$servletContextPath/swagger-ui.html")
 
-    @GetMapping("/search/{serial}")
-    fun search(@PathVariable(value="serial") serial: String)
+    @GetMapping("/access-control/search/{serial}")
+    fun searchPcIcat(@PathVariable(value="serial") serial: String)
             = ResponseEntity.status(OK).body(pcExceptionService.searchPcIcat(serial))
 
-    @PostMapping("")
+    @PostMapping("/{v1}/access-control")
     fun createAcessControl(@RequestBody request: AccessControlRequest): ResponseEntity<*> {
         pcExceptionService.createAccessControls(request)
         return ResponseEntity.status(CREATED).build<Any>()
     }
 
+    @GetMapping("/{v1}/access-control/{empno}")
+    fun searchSerial(@PathVariable(value="v1") v1: String, @PathVariable(value="empno") empno: String)
+            = ResponseEntity.status(OK).body(pcExceptionService.searchEmpno(empno))
+
+    @PostMapping("/{v1}/access-control/usb")
+    fun createUsbDevice(@RequestBody request: CreateUsbDeviceRequest) : ResponseEntity<*> {
+        pcExceptionService.createUsbDevice(request)
+        return ResponseEntity.status(CREATED).build<Any>()
+    }
 
 }

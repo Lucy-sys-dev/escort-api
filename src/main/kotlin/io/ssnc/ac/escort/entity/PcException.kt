@@ -271,3 +271,42 @@ data class PcExceptionMultiLogPk(
     @Column(name = "SERIAL") val serial: String,
     @Column(name = "GUBUN") val gubun: String
 ) : Serializable
+
+@Entity
+@Table(name = "PC_REG_USBDEVICE", catalog = "dbo")
+data class PcRegUsbdevice (
+    @Id
+    @Column(name = "USBSERIAL") var usbserial: String,
+    @Column(name = "VPID") var vpid: String,
+    @Column(name = "ALLOW_FROMDATE") var allowFromdate: String? = null,
+    @Column(name = "ALLOW_TODATE") var allowTodate: String? = null,
+    @Column(name = "BIGO") var bigo: String? = null,
+    @Column(name = "REG_DATE") var regDate: String? = null,
+    @Column(name = "REG_EMPNO") var regEmpno: String? = null,
+    @Column(name = "RUNNING") var running: Int? = null
+) : Serializable {
+}
+
+@Entity
+@Table(name = "PC_REG_USBEXCEPTION", catalog = "dbo")
+data class PcRegUsbexception (
+    @EmbeddedId
+    val pk: PcRegUsbexceptionPk,
+    @Column(name = "ALLOW_TYPE") var allowType: String,
+    @Column(name = "ALLOW_LOG") var allowLog: String,
+    @Column(name = "BIGO") var bigo: String? = null,
+    @Column(name = "ALLOW_FROMDATE") var allowFromdate: String? = null,
+    @Column(name = "ALLOW_TODATE") var allowTodate: String? = null,
+    @Column(name = "GRP_GUBUN") var grpGubun: String? = null,
+    @Column(name = "REG_DATE") var regDate: String? = null,
+    @Column(name = "REG_EMPNO") var regEmpno: String? = null,
+    @Column(name = "STORE_NOUSE") var storeNouse: Int? = null,
+    @Column(name = "LASTUSE_TIME") var lastuseTime: String? = null
+) : Serializable {
+}
+
+@Embeddable
+data class PcRegUsbexceptionPk(
+    @Column(name = "SERIAL") val serial: String,
+    @Column(name = "USBSERIAL") val usbserial: String
+) : Serializable

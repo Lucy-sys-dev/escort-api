@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository
 @Repository
 interface PcExceptionRepository: CrudRepository<PcException, String> {
     fun findByPk(pk: PcExceptionPk) : PcException?
+    fun findByPkSerial(serial: String): List<PcException>?
     fun findByPkAndAllowTodateGreaterThan(pk: PcExceptionPk, date: String): PcException?
 }
 
@@ -80,4 +81,13 @@ interface PcExceptionMultiRepository: CrudRepository<PcExceptionMulti, String> {
 @Repository
 interface PcExceptionMultiLogRepository: CrudRepository<PcExceptionMultiLog, String> {
 
+}
+
+@Repository
+interface PcRegUsbdeviceRepository: CrudRepository<PcRegUsbdevice, String> {
+}
+
+@Repository
+interface PcRegUsbexceptionRepository: CrudRepository<PcRegUsbexception, String> {
+    fun findByPkSerial(serial: String): List<PcRegUsbexception>?
 }

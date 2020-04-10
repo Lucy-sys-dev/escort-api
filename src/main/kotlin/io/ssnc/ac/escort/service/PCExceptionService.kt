@@ -4,6 +4,7 @@ package io.ssnc.ac.escort.service;
 import io.ssnc.ac.escort.exception.NotFoundException
 import io.ssnc.ac.escort.entity.*
 import io.ssnc.ac.escort.entity.request.AccessControlRequest
+import io.ssnc.ac.escort.entity.request.CreateUsbDeviceRequest
 import io.ssnc.ac.escort.entity.request.StoreRule
 import io.ssnc.ac.escort.entity.response.IcatResult
 import io.ssnc.ac.escort.exception.ServiceException
@@ -148,41 +149,12 @@ class PCExceptionService {
                         expType = it.pk.gubun,
                         expVal1 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.pk.value1) else it.pk.value1,
                         expVal2 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.value2!!) else "",
-                        allowFromdate = it.starttime!!,
-                        allowTodate = it.endtime!!
+                        allowFromdate = it.starttime!!+"00",
+                        allowTodate = it.endtime!!+"59"
                     )
                 )
             }
         }
-//        pcIcatExpListRepository.findByPkSerial(serial)?.let { results ->
-//            results.map {
-//                resultException.add(
-//                    IcatException(
-//                        serial = it.pk.serial,
-//                        ctrlGubun = it.pcIcatExp!!.gubun!!,
-//                        expType = it.pk.gubun,
-//                        expVal1 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.pk.value1) else it.pk.value1,
-//                        expVal2 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.value2!!) else "",
-//                        allowFromdate = it.starttime!!,
-//                        allowTodate = it.endtime!!
-//                    )
-//                )
-//            }
-//        } ?: run {
-//            pcIcatExceptionRepository.findBySerial(serial)?.let {result ->
-//                resultException.add(
-//                    IcatException(
-//                        serial = result.serial,
-//                        ctrlGubun = result.gubun!!,
-//                        expType = "ALL_PERMIT",
-//                        expVal1 = null,
-//                        expVal2 = null,
-//                        allowFromdate = result.allowFromdate!!,
-//                        allowTodate = result.allowTodate!!
-//                    )
-//                )
-//            }
-//        }
         return resultException
     }
 
@@ -322,6 +294,91 @@ class PCExceptionService {
         }
     }
 
+    fun createUsbDevice(request: CreateUsbDeviceRequest) {
+        pcBasicRepository.findBySerial(request.serial).let { basic ->
+            deviceService.createUsbDevice(
+                pcRegUsbdevice = PcRegUsbdevice(
+                    usbserial = request.usbSerial,
+                    running = request.running.toInt(),
+                    vpid = if (request.vpid == null) " " else request.vpid,
+                    allowTodate = request.allowEndDate,
+                    allowFromdate = request.allowStartDate,
+                    bigo = request.comment,
+                    regDate = DateUtil.nowDateTimeString,
+                    regEmpno = basic.empno
+                ))
+        }
+    }
+
+    fun searchSerial(serial: String): Any? {
+        val result: HashMap<String, Any> = HashMap()
+        pcBasicRepository.findBySerial(serial).let { basic ->
+            result.put("serial", basic.serial)
+            result.put("empno", basic.empno!!)
+            result.put("hname", basic.hname!!)
+            result.put("indeptnm", basic.indeptnm!!)
+            result.put("sdeptnm", basic.sdeptnm!!)
+            result.put("computerName", basic.computerName!!)
+
+            // 화면보호기, mobile
+            deviceService.searchPcExceptionBySerial(serial)?.let { pcExceptions ->
+                for (pcException in pcExceptions) {
+                    val list: HashMap<String, Any> = HashMap()
+                    list.put("status", if (pcException.value1 == 0) "ALLOW" else "DENY")
+                    list.put("startDate", pcException.allowFromdate!!)
+                    list.put("endDate", pcException.allowTodate!!)
+                    when(pcException.pk!!.gubun) {
+                        "S" -> result.put("screen", list)
+                        "M" -> result.put("mobile", list)
+                    }
+                }
+            }
+
+            //USB
+            deviceService.searchUsbExceptionBySerial(serial)?.let { pcUsbexceptions ->
+                val lists: ArrayList<Any> = ArrayList()
+                for (pcUsbexception in pcUsbexceptions) {
+                    val list: HashMap<String, Any> = HashMap()
+                    list.put("status", when(pcUsbexception.allowType) {
+                        "A" -> "ALLOW" "B" -> "BLOCK" else -> "READONLY"
+                    })
+                    list.put("startDate", pcUsbexception.allowFromdate!!)
+                    list.put("endDate", pcUsbexception.allowTodate!!)
+                    list.put("usbserial", pcUsbexception.pk.usbserial)
+                    lists.add(list)
+                }
+                result.put("usb", lists)
+            }
+
+            storageService.searchStorageBySerial(serial)?.let { storages ->
+                for (storage in storages) {
+                    val list: HashMap<String, Any> = HashMap()
+                    list.put("status", when(storage.allowType) {
+                        "A, Y" -> "ALLOW" "B, N" -> "BLOCK" else -> "READONLY"
+                    })
+                    list.put("startDate", storage.allowFromdate!!)
+                    list.put("endDate", storage.allowTodate!!)
+                    when(storage.pk!!.devName) {
+                        "CD-RW" -> result.put("cd-rw", list)
+                        "REMOVAL-DRIVE" -> result.put("removal-drive", list)
+                        "MOBILE-RW" -> result.put("mobile-rw", list)
+                    }
+                }
+
+            }
+            return result
+        }
+    }
+
+    fun searchEmpno(empno: String) : Any? {
+        val result: ArrayList<Any> = ArrayList()
+        pcBasicRepository.findByEmpno(empno)?.let { exists ->
+            for (exist in exists) {
+                result.add(searchSerial(exist.serial)!!)
+            }
+        }
+        return result
+    }
 //    val lessData: (String, String) -> String = { a, b -> min(a.toLong(), b.toLong()).toString() }
 //    val check: (Boolean, Boolean) -> Boolean = { a, b -> a && b}
 }

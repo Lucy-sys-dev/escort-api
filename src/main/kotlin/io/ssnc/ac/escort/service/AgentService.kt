@@ -62,8 +62,8 @@ class AgentService {
             eventTime = DateUtil.nowDateTimeString,
             serial = request.serial, type = request.type, attFilename = request.att_filename)
         val pcbasic = pcBasicRepository.findBySerial(request.serial)
-        val log = Log(logPk = logpk,
-            empno = pcbasic.empno, hname = pcbasic.hname, ip = pcbasic.ipAddr,
+        val log = Log(logPk = logpk, attAppname = request.att_appname, attSize = request.att_size,
+            empno = pcbasic.empno, hname = pcbasic.hname, ip = request.ip,
             sdeptnm = pcbasic.sdeptnm, deptcode = pcbasic.deptcode, locatenm = pcbasic.locatenm, madecode = pcbasic.madecode)
         logRepository.save(log)
 
@@ -73,21 +73,6 @@ class AgentService {
     fun teminate(request: TeminateRequest) {
 
         val pcExitpw = pcExitpwRepository.findFirstByOrderByEventTime()
-
-//        val query: StoredProcedureQuery = entityManager
-//            .createNamedStoredProcedureQuery("getTerminatePassword")
-//            .setParameter("P_STR", request.password)
-//            .setParameter("P_KEY", pcExitpw.passwdKey)
-//
-//        val result : String = query.resultList.get(0) as String
-////        if (result.key.isNullOrEmpty()) {
-////            throw NotFoundException("password encoder error")
-////        }
-
-//        val query: Query = entityManager.createNativeQuery("SET NOCOUNT ON; exec dbo.UFN_ENCRYPT '1234', '2783096541';")
-////        query.setParameter("P_STR", request.password)
-////        query.setParameter("P_KEY", pcExitpw.passwdKey)
-//        val result = query.getSingleResult() // as String
 
         val result = pcTeminateRepository.getTerminatePassword(request.password, pcExitpw.passwdKey) as String
 
