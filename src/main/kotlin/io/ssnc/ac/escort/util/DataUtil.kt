@@ -53,30 +53,27 @@ object DataUtil {
         val pattern: Pattern
         val matcher: Matcher
         // val PASSWORD_PATTERN = "^(?=.*[0-9])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\\S+$).{4,9}$"
-        if (continuousPwd(password)) return false
-        val passwordPattern = "[a-zA-Z0-9*&%$#~!@^()?:;',._]{8,16}"
+        if (isContinuousPattern(password)) return false
+        val passwordPattern = "[a-zA-Z0-9*&%$#~!@^(){}?:;',._\"]{8,16}"
         pattern = Pattern.compile(passwordPattern)
         matcher = pattern.matcher(password.trim())
         return matcher.matches()
 
     }
 
-    fun continuousPwd(pwd: String): Boolean {
-        var o = 0
-        var d = 0
-        var p = 0
-        var n = 0
-        val limit = 2
-        for (i in pwd.indices) {
-            val tempVal = pwd[i]
-            if (i > 0 && o - tempVal.toInt().also { p = it } > -2 && (if (p == d) n + 1 else 0.also {
-                    n = it
-                }) > limit - 1) {
-                return true
-            }
-            d = p
-            o = tempVal.toInt()
+    /** * 3개 이상 연속된 문자 패턴 체크 * * @param password * @return */
+    fun isContinuousPattern(password: String): Boolean {
+        val p2 = Pattern.compile("(\\w)\\1\\1")
+        val m2 = p2.matcher(password)
+
+        val p3 =
+            Pattern.compile("([\\{\\}\\[\\]\\/?.,;:|\\)*~`!^\\-_+<>@\\#$%&\\\\\\=\\(\\'\\\"])\\1\\1")
+        val m3 = p3.matcher(password)
+
+        if (m2.find() || m3.find()) {
+            return true;
         }
+
         return false
     }
 
