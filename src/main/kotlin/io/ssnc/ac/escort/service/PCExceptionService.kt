@@ -64,6 +64,12 @@ class PCExceptionService {
     @Autowired
     lateinit var programService: ProgramService
 
+    @Autowired
+    lateinit var pcDeptcodeRepository: PcDeptcodeRepository
+
+    @Autowired
+    lateinit var grouplistRepository: GrouplistRepository
+
     fun searchPcIcat(serial: String) : IcatResult? {
         //정책 조회
         val cntrOnOff : String = policyService.checkDefaultPolicy(serial, "ICAT_ON_CTRL")
@@ -125,9 +131,10 @@ class PCExceptionService {
 
     fun searchPcIcatIndiviaulException(serial: String) : ArrayList<IcatException>? {
         val resultException = ArrayList<IcatException>()
-        val results = pcIcatExpListRepository.findByPkSerial(serial)
-        if (results.isNullOrEmpty()) {
-            pcIcatExceptionRepository.findBySerial(serial)?.let {result ->
+        //개인 예외 허용 조회
+        pcIcatExceptionRepository.findBySerial(serial)?.let { result ->
+            //개인 설정
+            result.gubun!!.filter { result.gubun == "2" || result.gubun == "4" }.forEach {
                 resultException.add(
                     IcatException(
                         serial = result.serial,
@@ -140,22 +147,175 @@ class PCExceptionService {
                     )
                 )
             }
-        } else {
-            results.map {
-                resultException.add(
-                    IcatException(
-                        serial = it.pk.serial,
-                        ctrlGubun = it.pcIcatExp!!.gubun!!,
-                        expType = it.pk.gubun,
-                        expVal1 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.pk.value1) else it.pk.value1,
-                        expVal2 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.value2!!) else "",
-                        allowFromdate = it.starttime!!+"00",
-                        allowTodate = it.endtime!!+"59"
+
+            result.gubun!!.filter { result.gubun == "0" || result.gubun == "1" }.forEach {
+                // ALL_BLOCK, 통제 상세 설정 없는 경웅 예외없이 무조건 ALL_BLOCK
+                val gubuns = listOf( "HOST", "IP", "MSGR")
+                if (pcIcatExpListRepository.countByPkSerialAndPkGrpGubunAndPkGubunIn(serial, "P",  gubuns) == 0) {
+                    resultException.add(
+                        IcatException(
+                            serial = result.serial,
+                            ctrlGubun = result.gubun!!,
+                            expType = "ALL_BLOCK",
+                            expVal1 = null,
+                            expVal2 = null,
+                            allowFromdate = result.allowFromdate!!,
+                            allowTodate = result.allowTodate!!
+                        )
                     )
-                )
+                }
+                pcIcatExpListRepository.findByPkSerial(serial).let { pcIcatExpLists ->
+                    pcIcatExpLists!!.forEach { pcIcatExpList ->
+                        if (pcIcatExpList.pk.grpGubun == "P") {
+                            when(pcIcatExpList.pk.gubun) {
+                                "IP", "HOST", "MSGR" -> {
+                                    resultException.add(
+                                        IcatException(
+                                            serial = pcIcatExpList.pk.serial,
+                                            ctrlGubun = pcIcatExpList.pk.gubun!!,
+                                            expType = pcIcatExpList.pk.gubun,
+                                            expVal1 = if (pcIcatExpList.pk.gubun == "IP") DataUtil.IPStringToNumber(pcIcatExpList.pk.value1) else pcIcatExpList.pk.value1,
+                                            expVal2 = if (pcIcatExpList.pk.gubun == "IP") DataUtil.IPStringToNumber(pcIcatExpList.value2!!) else "",
+                                            allowFromdate = pcIcatExpList.starttime!!+"00",
+                                            allowTodate = pcIcatExpList.endtime!!+"59"
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
+        // 가상그룹 조회
+        val grouplists = searchGroupCode(serial)
+
+        if (grouplists != null) {
+            for(grouplist in grouplists) {
+                pcIcatExceptionRepository.findBySerial(grouplist.pk.groupcode)?.let { result ->
+                    result.gubun!!.filter { result.gubun == "2" || result.gubun == "4" }.forEach {
+                        resultException.add(
+                            IcatException(
+                                serial = result.serial,
+                                ctrlGubun = result.gubun!!,
+                                expType = "ALL_PERMIT",
+                                expVal1 = null,
+                                expVal2 = null,
+                                allowFromdate = result.allowFromdate!!,
+                                allowTodate = result.allowTodate!!
+                            )
+                        )
+                    }
+//                    if (grouplist.valuegubun == "P") {
+                        result.gubun!!.filter { result.gubun == "0" || result.gubun == "1" }.forEach {
+                            // ALL_BLOCK, 통제 상세 설정 없는 경웅 예외없이 무조건 ALL_BLOCK
+                            val gubuns = listOf("HOST", "IP", "MSGR")
+                            if (pcIcatExpListRepository.countByPkSerialAndPkGrpGubunAndPkGubunIn(
+                                    grouplist.pk.groupcode,
+                                    "G",
+                                    gubuns
+                                ) == 0
+                            ) {
+                                resultException.add(
+                                    IcatException(
+                                        serial = result.serial,
+                                        ctrlGubun = result.gubun!!,
+                                        expType = "ALL_BLOCK",
+                                        expVal1 = null,
+                                        expVal2 = null,
+                                        allowFromdate = result.allowFromdate!!,
+                                        allowTodate = result.allowTodate!!
+                                    )
+                                )
+                            }
+                            pcIcatExpListRepository.findByPkSerial(serial).let { pcIcatExpLists ->
+                                pcIcatExpLists!!.forEach { pcIcatExpList ->
+                                    if (pcIcatExpList.pk.grpGubun == "P") {
+                                        when (pcIcatExpList.pk.gubun) {
+                                            "IP", "HOST", "MSGR" -> {
+                                                resultException.add(
+                                                    IcatException(
+                                                        serial = pcIcatExpList.pk.serial,
+                                                        ctrlGubun = pcIcatExpList.pk.gubun!!,
+                                                        expType = pcIcatExpList.pk.gubun,
+                                                        expVal1 = if (pcIcatExpList.pk.gubun == "IP") DataUtil.IPStringToNumber(
+                                                            pcIcatExpList.pk.value1
+                                                        ) else pcIcatExpList.pk.value1,
+                                                        expVal2 = if (pcIcatExpList.pk.gubun == "IP") DataUtil.IPStringToNumber(
+                                                            pcIcatExpList.value2!!
+                                                        ) else "",
+                                                        allowFromdate = pcIcatExpList.starttime!! + "00",
+                                                        allowTodate = pcIcatExpList.endtime!! + "59"
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+//                    }
+                }
+            }
+        }
+
+
+//        val results = pcIcatExpListRepository.findByPkSerial(serial)
+//        if (results.isNullOrEmpty()) {
+//            pcIcatExceptionRepository.findBySerial(serial)?.let {result ->
+//                resultException.add(
+//                    IcatException(
+//                        serial = result.serial,
+//                        ctrlGubun = result.gubun!!,
+//                        expType = "ALL_PERMIT",
+//                        expVal1 = null,
+//                        expVal2 = null,
+//                        allowFromdate = result.allowFromdate!!,
+//                        allowTodate = result.allowTodate!!
+//                    )
+//                )
+//            }
+//        } else {
+//            results.map {
+//                resultException.add(
+//                    IcatException(
+//                        serial = it.pk.serial,
+//                        ctrlGubun = it.pcIcatExp!!.gubun!!,
+//                        expType = it.pk.gubun,
+//                        expVal1 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.pk.value1) else it.pk.value1,
+//                        expVal2 = if (it.pk.gubun == "IP") DataUtil.IPStringToNumber(it.value2!!) else "",
+//                        allowFromdate = it.starttime!!+"00",
+//                        allowTodate = it.endtime!!+"59"
+//                    )
+//                )
+//            }
+//        }
         return resultException
+    }
+
+    //가상그룹
+    fun searchGroupCode(serial: String) : List<Grouplist>? {
+        val pcBasic = pcBasicRepository.findBySerial(serial)
+        var deptCode = pcBasic.deptcode
+        val groupList = ArrayList<Grouplist>()
+        do {
+            pcDeptcodeRepository.findByDeptcode(deptCode!!)?.let { it ->
+                grouplistRepository.findByCodevalue(deptCode!!)?.let { grouplists ->
+                    grouplists.forEach { grouplist ->
+                        groupList.add(grouplist)
+                    }
+                }
+                deptCode = it.highdeptcode
+            }
+
+        } while (deptCode != " ")
+
+        grouplistRepository.findByCodevalue(serial)?.let { grouplists ->
+            grouplists.forEach { grouplist ->
+                groupList.add(grouplist)
+            }
+        }
+        return groupList
     }
 
     fun createAccessControls(request: AccessControlRequest) {

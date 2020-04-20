@@ -61,6 +61,7 @@ interface PcIcatClsidRepository: CrudRepository<PcIcatClsid, String> {
 interface PcIcatExpListRepository: CrudRepository<PcIcatExpList, String> {
     fun findByPk(pk: PcIcatExpListPk): PcIcatExpList?
     fun findByPkSerial(serial: String) : List<PcIcatExpList>?
+    fun countByPkSerialAndPkGrpGubunAndPkGubunIn(serial: String, grpGubun: String, gubuns: List<String>): Int
 }
 
 @Repository

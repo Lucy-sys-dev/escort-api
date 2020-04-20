@@ -1,11 +1,7 @@
 package io.ssnc.ac.escort.entity
 
-import javax.persistence.Entity
-import javax.persistence.Table
-
 import java.io.Serializable
-import javax.persistence.Column
-import javax.persistence.Id
+import javax.persistence.*
 
 @Entity
 @Table(name = "PC_BASIC", catalog = "dbo")
@@ -51,3 +47,36 @@ data class PcBasic (
     @Column(name = "empno_first_reg") val empnoFirstReg: String?=null,
     @Column(name = "hname_first_reg") val hnameFirstReg: String?=null
 ): Serializable
+
+@Entity
+@Table(name = "GROUPLIST", catalog = "dbo")
+data class Grouplist (
+    @EmbeddedId
+    val pk: GrouplistPk,
+    @Column(name = "CODEVALUE") var codevalue: String? = null,
+    @Column(name = "VALUEGUBUN") var valuegubun: String? = null
+) : Serializable {
+}
+
+@Embeddable
+data class GrouplistPk(
+    @Column(name = "GROUPCODE") val groupcode: String,
+    @Column(name = "GROUPSEQ") val groupseq: Int
+) : Serializable
+
+@Entity
+@Table(name = "PC_DEPTCODE", catalog = "dbo")
+data class PcDeptcode(
+    @Id
+    @Column(name = "DEPTCODE") val deptcode: String,
+    @Column(name = "DEPTNAME") val deptname: String,
+    @Column(name = "DEPTENGNAME") val deptengname: String? = null,
+    @Column(name = "HIGHDEPTCODE") val highdeptcode: String,
+    @Column(name = "DEPTH") val depth: Int? = null,
+    @Column(name = "FNAMEKOR") val fnamekor: String? = null,
+    @Column(name = "FNAMEENG") val fnameeng: String? = null,
+    @Column(name = "NORDER") val norder: Int? = null,
+    @Column(name = "NLEVEL") val nlevel: Int? = null,
+    @Column(name = "MADECODE") val madecode: String? = null,
+    @Column(name = "ORIGIN") val origin: String? = null
+)
