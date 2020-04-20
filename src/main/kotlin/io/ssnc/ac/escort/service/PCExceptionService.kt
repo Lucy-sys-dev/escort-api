@@ -12,8 +12,10 @@ import io.ssnc.ac.escort.repository.*
 import io.ssnc.ac.escort.service.model.*
 import io.ssnc.ac.escort.util.DataUtil
 import io.ssnc.ac.escort.util.DateUtil
+import io.ssnc.ac.escort.util.UdpHelper
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service;
 import java.lang.Long.min
 
@@ -23,6 +25,9 @@ import javax.persistence.StoredProcedureQuery
 
 @Service
 class PCExceptionService {
+    @Value("\${escort.ip}")
+    private val escortIp: String = "localhost"
+
     companion object : KLogging()
 
     @Autowired
@@ -318,6 +323,7 @@ class PCExceptionService {
         return groupList
     }
 
+    @Transactional
     fun createAccessControls(request: AccessControlRequest) {
         if (!request.storages.isNullOrEmpty()){
             storageService.createStorage(request)
@@ -538,6 +544,10 @@ class PCExceptionService {
             }
         }
         return result
+    }
+
+    fun sendEscortClient(serial: String) {
+        UdpHelper.sendUdp( escortIp, 15010, "[WR-PP]"+serial+";")
     }
 //    val lessData: (String, String) -> String = { a, b -> min(a.toLong(), b.toLong()).toString() }
 //    val check: (Boolean, Boolean) -> Boolean = { a, b -> a && b}

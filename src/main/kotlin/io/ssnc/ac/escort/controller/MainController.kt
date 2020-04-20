@@ -41,4 +41,10 @@ class MainController {
         return ResponseEntity.status(CREATED).build<Any>()
     }
 
+    @PostMapping("/{v1}/access-control/send/{serial}")
+    fun sendAccessControl(@PathVariable(value="serial")serial: String) : ResponseEntity<*> {
+        pcExceptionService.sendEscortClient(serial)
+        return ResponseEntity.status(OK).build<Any>()
+    }
+
 }

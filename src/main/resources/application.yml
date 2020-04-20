@@ -3,7 +3,7 @@ server:
 #  servlet.contextPath: /access-control
 
 spring:
-  profiles.active: h2
+  profiles.active: prod
   jpa:
     show_sql: true
     properties:
@@ -33,6 +33,9 @@ downloadfile:
   plp: plp.edcfg
   plpcsinfo: plpcsinfo.cscfg
   path:
+
+escort:
+  ip: 192.168.1.156
 
 logging.level:
   org.hibernate.type: error
