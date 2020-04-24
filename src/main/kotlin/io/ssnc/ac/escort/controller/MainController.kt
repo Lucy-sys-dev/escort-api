@@ -28,6 +28,7 @@ class MainController {
     @PostMapping("/{v1}/access-control")
     fun createAcessControl(@RequestBody request: AccessControlRequest): ResponseEntity<*> {
         pcExceptionService.createAccessControls(request)
+        pcExceptionService.sendEscortClient(request.serial)
         return ResponseEntity.status(CREATED).build<Any>()
     }
 
