@@ -40,6 +40,4 @@ class AuthController {
         return ResponseEntity.status(HttpStatus.OK).body(authService.getUserById(empno))
     }
 
-
-
 }

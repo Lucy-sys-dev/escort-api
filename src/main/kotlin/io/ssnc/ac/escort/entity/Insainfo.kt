@@ -62,7 +62,8 @@ data class pcUsers (
     @Column(name = "RESNO") var resno: String? = null,
     @Column(name = "EMP_TYPE") var empType: String? = null,
     @Column(name = "STATUS") var status: String? = null,
-    @Column(name = "COMPANY_NAME") var companyName: String? = null
+    @Column(name = "COMPANY_NAME") var companyName: String? = null,
+    @Column(name = "PASSWORD_ENCRYPT") var passwordEncrypt: String? = null
 
 ) : Serializable
 

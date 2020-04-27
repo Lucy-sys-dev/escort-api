@@ -18,8 +18,10 @@ import io.ssnc.ac.escort.repository.PcBasicRepository
 import io.ssnc.ac.escort.repository.PcUsersReposiroty
 import io.ssnc.ac.escort.util.DataUtil
 import io.ssnc.ac.escort.util.DateUtil
+import io.ssnc.ac.escort.util.EnDecryptHelper
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.*
 import kotlin.collections.ArrayList
@@ -70,7 +72,7 @@ class AuthService {
         val user = pcUsersRepository.findByPk( pk) ?: throw NotFoundException("empno is not found")
         if (user.password == request.pwd) throw PasswordException("Please enter valid password")
         if (!DataUtil.isValidPassword(request.pwd)) throw PasswordException("Please enter valid password")
-        user.password = request.pwd
+//        user.password = passwordEncoder.encode(request.pwd)
         user.changePwdDt = Date()
         pcUsersRepository.save(user)
     }
@@ -87,7 +89,9 @@ class AuthService {
         val pk = pcUsersPK(empno = request.id, affiliate = request.affiliate)
         val user = pcUsersRepository.findByPk(pk) ?: throw NotFoundException("empno is not found")
 
-        if (user.password != request.pwd)
+        val password = user.password
+
+        if (password != request.pwd)
             throw LoginException("pwd is fail")
 
         if (user.changePwdDt?.let { it1 -> DateUtil.convertToLocalDateViaInstant(it1)?.let { it1 -> DateUtil.addMonth(it1, 3) } }!! <= DateUtil.convertToLocalDateViaInstant(
@@ -123,6 +127,13 @@ class AuthService {
 
     fun getUserById(empno: String): List<PcBasic>? {
         return pcBasicRepository.findByEmpno(empno)
+    }
+
+    fun passwordEndecrypt(text: String) {
+        val encrypt = EnDecryptHelper.encryptText(text)
+        logger.debug { "passwordEncrypt() $encrypt" }
+        val decrypt = EnDecryptHelper.decryptText(encrypt)
+        logger.debug { "passwordDecrypt() $decrypt" }
 
     }
 }

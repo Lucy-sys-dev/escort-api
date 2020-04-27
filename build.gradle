@@ -19,6 +19,7 @@ buildscript {
 
     repositories {
         jcenter()
+        google()
         mavenCentral()
         maven {
             url "https://plugins.gradle.org/m2/"
@@ -36,6 +37,8 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-noarg:${kotlinVersion}"
         // Docker
         classpath("gradle.plugin.com.palantir.gradle.docker:gradle-docker:${dockerGradleVersion}")
+        classpath 'com.android.tools.build:gradle:3.3.0'
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
     }
 }
 
@@ -83,6 +86,7 @@ dependencies {
     compile('org.springframework.boot:spring-boot-starter-actuator')
     compile('org.springframework.boot:spring-boot-starter-data-jpa')
     compile('org.springframework.boot:spring-boot-starter-data-rest')
+    implementation 'org.springframework.boot:spring-boot-starter-security'
 
     // Kotlin Support
     compile('com.fasterxml.jackson.module:jackson-module-kotlin')
@@ -135,6 +139,15 @@ dependencies {
     //jax-8 dependencies for JDK 9+
     implementation( "jakarta.xml.bind:jakarta.xml.bind-api:2.3.2" )
     implementation( "org.glassfish.jaxb:jaxb-runtime:2.3.2" )
+    //android util
+    compile group: 'net.morimekta.utils', name: 'android-util', version: '2.7.1'
+    // https://mvnrepository.com/artifact/org.jasypt/jasypt
+    compile group: 'org.jasypt', name: 'jasypt', version: '1.9.0'
+    // https://mvnrepository.com/artifact/joda-time/joda-time
+    compile group: 'joda-time', name: 'joda-time', version: '2.3'
+
+
+
 }
 
 dependencyManagement {
